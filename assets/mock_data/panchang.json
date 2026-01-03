@@ -1,0 +1,37 @@
+{
+  "date": "2024-01-25",
+  "tithi": "Shukla Paksha, Navami",
+  "nakshatra": "Rohini",
+  "yoga": "Vajra",
+  "karana": "Kaulava",
+  "sunrise": "06:15 AM",
+  "sunset": "06:45 PM",
+  "muhurats": [
+    {
+      "name": "Abhijit Muhurat",
+      "start": "11:45 AM",
+      "end": "12:30 PM",
+      "type": "general"
+    },
+    {
+      "name": "Amrit Kalam",
+      "start": "09:30 AM",
+      "end": "11:00 AM",
+      "type": "general"
+    },
+    {
+      "name": "Vijay Muhurat",
+      "start": "10:00 AM",
+      "end": "11:30 AM",
+      "type": "business"
+    }
+  ],
+  "festivals": [
+    {
+      "name": "Diwali",
+      "date": "2024-11-12",
+      "description": "Festival of Lights"
+    }
+  ]
+}
+

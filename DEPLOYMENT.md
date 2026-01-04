@@ -112,6 +112,7 @@ If you prefer not to use Docker:
 - **API calls failing**: Verify the backend URL in environment configuration.
 - **Build size too large**: Consider using `--web-renderer html` instead of `canvaskit` for smaller builds.
 - **CORS errors**: Update backend CORS settings.
+- **Git ownership errors ("dubious ownership")**: The Dockerfile has been fixed to configure Git safe.directory. This should resolve the issue. If you still see errors, ensure you're using the latest Dockerfile.
 
 ## Security Recommendations
 

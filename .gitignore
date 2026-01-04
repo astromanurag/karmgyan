@@ -1,0 +1,90 @@
+# Flutter/Dart
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+flutter_*.png
+linked_*.ds
+unlinked.ds
+unlinked_spec.ds
+*.g.dart
+*.freezed.dart
+*.gr.dart
+
+# IDE
+.vscode/
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+*.env
+
+# Test
+coverage/
+.test_coverage/
+*.coverage
+
+# Logs
+*.log
+logs/
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg-info/
+dist/
+*.egg
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+# Build outputs
+*.apk
+*.aab
+*.ipa
+*.app
+*.dmg
+*.msi
+*.exe
+
+# Temporary files
+*.tmp
+*.temp
+*.cache
+*.bak
+
+# Documentation build
+docs/_build/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Misc
+*.pem
+*.key
+*.cert

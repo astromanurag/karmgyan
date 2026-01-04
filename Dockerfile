@@ -20,11 +20,15 @@ RUN apt-get update && apt-get install -y \
     libgtk-3-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Configure Git to avoid ownership issues in Docker (Git security feature)
+RUN git config --global --add safe.directory '*'
+
 # Download and install Flutter
 RUN cd /opt && \
     curl -L https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${FLUTTER_VERSION}-stable.tar.xz -o flutter.tar.xz && \
     tar xf flutter.tar.xz && \
-    rm flutter.tar.xz
+    rm flutter.tar.xz && \
+    chmod -R 755 /opt/flutter
 
 # Enable web support and accept licenses
 RUN flutter config --enable-web && \

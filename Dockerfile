@@ -5,7 +5,7 @@ FROM ubuntu:22.04
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
-ENV FLUTTER_VERSION=3.24.5
+ENV FLUTTER_VERSION=3.16.0
 ENV FLUTTER_HOME=/opt/flutter
 ENV PATH="$FLUTTER_HOME/bin:$PATH"
 

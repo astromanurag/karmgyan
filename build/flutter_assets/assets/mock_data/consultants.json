@@ -1,0 +1,167 @@
+[
+  {
+    "id": "consultant_001",
+    "user_id": "user_002",
+    "name": "Dr. Priya Sharma",
+    "specialization": "Vedic Astrology",
+    "experience_years": 15,
+    "hourly_rate": 999.0,
+    "bio": "Expert in Vedic astrology with 15 years of experience. Specializes in birth chart analysis, dasha predictions, and marriage compatibility.",
+    "profile_photo_url": null,
+    "status": "approved",
+    "availability": {
+      "monday": ["09:00-12:00", "14:00-18:00"],
+      "tuesday": ["09:00-12:00", "14:00-18:00"],
+      "wednesday": ["09:00-12:00", "14:00-18:00"],
+      "thursday": ["09:00-12:00", "14:00-18:00"],
+      "friday": ["09:00-12:00", "14:00-18:00"],
+      "saturday": ["10:00-14:00"],
+      "sunday": []
+    },
+    "qualifications": [
+      {
+        "degree": "M.A. in Sanskrit",
+        "institution": "Delhi University",
+        "year": 2008
+      },
+      {
+        "certification": "Certified Vedic Astrologer",
+        "institution": "International Institute of Vedic Sciences",
+        "year": 2010
+      }
+    ],
+    "created_at": "2024-01-15T00:00:00Z",
+    "approved_at": "2024-01-20T00:00:00Z",
+    "approved_by": "admin_001"
+  },
+  {
+    "id": "consultant_002",
+    "user_id": "user_004",
+    "name": "Dr. Rajesh Kumar",
+    "specialization": "Numerology",
+    "experience_years": 10,
+    "hourly_rate": 799.0,
+    "bio": "Numerology expert with expertise in name numerology, date selection, and life path analysis.",
+    "profile_photo_url": null,
+    "status": "pending",
+    "availability": {
+      "monday": ["10:00-13:00", "15:00-19:00"],
+      "tuesday": ["10:00-13:00", "15:00-19:00"],
+      "wednesday": ["10:00-13:00", "15:00-19:00"],
+      "thursday": ["10:00-13:00", "15:00-19:00"],
+      "friday": ["10:00-13:00", "15:00-19:00"],
+      "saturday": [],
+      "sunday": []
+    },
+    "qualifications": [
+      {
+        "degree": "B.Sc. in Mathematics",
+        "institution": "Mumbai University",
+        "year": 2012
+      },
+      {
+        "certification": "Advanced Numerology Certification",
+        "institution": "Numerology Institute of India",
+        "year": 2014
+      }
+    ],
+    "created_at": "2024-02-01T00:00:00Z",
+    "approved_at": null,
+    "approved_by": null
+  },
+  {
+    "id": "consultant_003",
+    "user_id": "user_005",
+    "name": "Dr. Anjali Mehta",
+    "specialization": "Palmistry",
+    "experience_years": 12,
+    "hourly_rate": 899.0,
+    "bio": "Renowned palmistry expert with deep knowledge of hand reading, life lines, and personality analysis.",
+    "profile_photo_url": null,
+    "status": "approved",
+    "availability": {
+      "monday": ["11:00-14:00", "16:00-20:00"],
+      "tuesday": ["11:00-14:00", "16:00-20:00"],
+      "wednesday": ["11:00-14:00", "16:00-20:00"],
+      "thursday": ["11:00-14:00", "16:00-20:00"],
+      "friday": ["11:00-14:00", "16:00-20:00"],
+      "saturday": ["10:00-15:00"],
+      "sunday": []
+    },
+    "qualifications": [
+      {
+        "degree": "M.A. in Psychology",
+        "institution": "Bangalore University",
+        "year": 2010
+      },
+      {
+        "certification": "Master Palmist",
+        "institution": "Indian Palmistry Association",
+        "year": 2012
+      }
+    ],
+    "created_at": "2024-01-20T00:00:00Z",
+    "approved_at": "2024-01-25T00:00:00Z",
+    "approved_by": "admin_001"
+  },
+  {
+    "id": "consultant_004",
+    "user_id": "user_006",
+    "name": "Pandit Ravi Shastri",
+    "specialization": "Vedic Astrology, Muhurat",
+    "experience_years": 20,
+    "hourly_rate": 1299.0,
+    "bio": "Senior Vedic astrologer specializing in muhurat selection, marriage matching, and vastu consultation.",
+    "profile_photo_url": null,
+    "status": "approved",
+    "availability": {
+      "monday": ["08:00-12:00", "14:00-18:00"],
+      "tuesday": ["08:00-12:00", "14:00-18:00"],
+      "wednesday": ["08:00-12:00", "14:00-18:00"],
+      "thursday": ["08:00-12:00", "14:00-18:00"],
+      "friday": ["08:00-12:00", "14:00-18:00"],
+      "saturday": ["09:00-13:00"],
+      "sunday": []
+    },
+    "qualifications": [
+      {
+        "degree": "Shastri (Sanskrit)",
+        "institution": "Sanskrit University",
+        "year": 2002
+      },
+      {
+        "certification": "Jyotish Acharya",
+        "institution": "Bharatiya Vidya Bhavan",
+        "year": 2004
+      }
+    ],
+    "created_at": "2024-01-10T00:00:00Z",
+    "approved_at": "2024-01-12T00:00:00Z",
+    "approved_by": "admin_001"
+  },
+  {
+    "id": "consultant_005",
+    "user_id": "user_007",
+    "name": "Dr. Meera Patel",
+    "specialization": "Tarot Reading",
+    "experience_years": 8,
+    "hourly_rate": 699.0,
+    "bio": "Professional tarot card reader with expertise in love, career, and spiritual guidance.",
+    "profile_photo_url": null,
+    "status": "rejected",
+    "availability": {
+      "monday": ["12:00-16:00", "18:00-21:00"],
+      "tuesday": ["12:00-16:00", "18:00-21:00"],
+      "wednesday": ["12:00-16:00", "18:00-21:00"],
+      "thursday": ["12:00-16:00", "18:00-21:00"],
+      "friday": ["12:00-16:00", "18:00-21:00"],
+      "saturday": [],
+      "sunday": []
+    },
+    "qualifications": [],
+    "created_at": "2024-02-05T00:00:00Z",
+    "approved_at": null,
+    "approved_by": null
+  }
+]
+

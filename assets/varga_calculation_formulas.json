@@ -1,0 +1,133 @@
+{
+  "description": "Varga chart calculation formulas and lookup tables from chartcalculation.pdf and astrocalculation 2.pdf",
+  "source": "chartcalculation.pdf, astrocalculation 2.pdf",
+  "note": "These formulas should be validated and updated based on the PDF content. OCR errors may exist in scanned PDFs.",
+  "varga_charts": {
+    "D1": {
+      "name": "Rashi",
+      "division": 1,
+      "formula": "Same as birth chart - no calculation needed",
+      "lookup_table": null
+    },
+    "D2": {
+      "name": "Hora",
+      "division": 2,
+      "formula": "Odd signs: division 0 = Leo(4), division 1 = Cancer(3). Even signs: division 0 = Cancer(3), division 1 = Leo(4)",
+      "lookup_table": null,
+      "notes": "TODO: Validate with PDF"
+    },
+    "D3": {
+      "name": "Drekkana",
+      "division": 3,
+      "formula": "First 10° = same sign, next 10° = 5th sign, last 10° = 9th sign",
+      "lookup_table": null,
+      "notes": "TODO: Validate with PDF"
+    },
+    "D4": {
+      "name": "Chaturthamsa",
+      "division": 4,
+      "formula": "Sequential mapping: (sign_index + division_num) % 12",
+      "lookup_table": null,
+      "notes": "TODO: Validate with PDF"
+    },
+    "D7": {
+      "name": "Saptamsa",
+      "division": 7,
+      "formula": "Sequential mapping: (sign_index + division_num) % 12",
+      "lookup_table": null,
+      "notes": "TODO: Validate with PDF"
+    },
+    "D9": {
+      "name": "Navamsa",
+      "division": 9,
+      "formula": "(sign_index * 9 + division_num) % 12",
+      "lookup_table": null,
+      "notes": "Validated - working correctly"
+    },
+    "D10": {
+      "name": "Dasamsa",
+      "division": 10,
+      "formula": "Sequential mapping: (sign_index + division_num) % 12",
+      "lookup_table": null,
+      "notes": "TODO: Validate with PDF"
+    },
+    "D12": {
+      "name": "Dwadasamsa",
+      "division": 12,
+      "formula": "Sequential mapping: (sign_index + division_num) % 12",
+      "lookup_table": null,
+      "notes": "TODO: Validate with PDF"
+    },
+    "D16": {
+      "name": "Shodasamsa",
+      "division": 16,
+      "formula": "TODO: Extract from PDF - currently using sequential mapping but showing wrong results (Taurus instead of Scorpio)",
+      "lookup_table": null,
+      "notes": "ISSUE: Expected Scorpio ascendant, getting Taurus (6 signs off). Need correct formula from PDF.",
+      "current_issue": "Ascendant calculation incorrect - needs PDF validation"
+    },
+    "D20": {
+      "name": "Vimsamsa",
+      "division": 20,
+      "formula": "TODO: Extract from PDF - currently using sequential mapping but showing wrong results (Cancer instead of Capricorn)",
+      "lookup_table": null,
+      "notes": "ISSUE: Expected Capricorn ascendant, getting Cancer (6 signs off). Need correct formula from PDF.",
+      "current_issue": "Ascendant calculation incorrect - needs PDF validation"
+    },
+    "D24": {
+      "name": "Chaturvimsamsa",
+      "division": 24,
+      "formula": "Sequential mapping: (sign_index + division_num) % 12",
+      "lookup_table": null,
+      "notes": "TODO: Validate with PDF"
+    },
+    "D27": {
+      "name": "Saptavimsamsa",
+      "division": 27,
+      "formula": "Sequential mapping: (sign_index + division_num) % 12",
+      "lookup_table": null,
+      "notes": "TODO: Validate with PDF"
+    },
+    "D30": {
+      "name": "Trimsamsa",
+      "division": 30,
+      "formula": "Odd signs: 0-5°=Aries(0), 5-10°=Taurus(1), 10-15°=Gemini(2), 15-20°=Cancer(3), 20-25°=Leo(4), 25-30°=Virgo(5). Even signs: 0-5°=Libra(6), 5-10°=Scorpio(7), 10-15°=Sagittarius(8), 15-20°=Capricorn(9), 20-25°=Aquarius(10), 25-30°=Pisces(11)",
+      "lookup_table": null,
+      "notes": "TODO: Validate with PDF"
+    },
+    "D40": {
+      "name": "Khavedamsa",
+      "division": 40,
+      "formula": "Sequential mapping: (sign_index + division_num) % 12",
+      "lookup_table": null,
+      "notes": "TODO: Validate with PDF"
+    },
+    "D45": {
+      "name": "Akshavedamsa",
+      "division": 45,
+      "formula": "Sequential mapping: (sign_index + division_num) % 12",
+      "lookup_table": null,
+      "notes": "TODO: Validate with PDF"
+    },
+    "D60": {
+      "name": "Shashtiamsa",
+      "division": 60,
+      "formula": "Sequential mapping: (sign_index + division_num) % 12",
+      "lookup_table": null,
+      "notes": "TODO: Validate with PDF"
+    }
+  },
+  "lookup_tables": {
+    "description": "If PDFs contain lookup tables, add them here as arrays or maps",
+    "D16_table": null,
+    "D20_table": null,
+    "other_tables": {}
+  },
+  "extraction_notes": {
+    "pdf_files": ["chartcalculation.pdf", "astrocalculation 2.pdf"],
+    "extraction_method": "Run: pip install pypdf && python3 extract_pdf_text.py",
+    "ocr_warning": "PDFs are scanned - OCR errors may exist. Manual validation recommended.",
+    "last_updated": "Pending PDF extraction"
+  }
+}
+

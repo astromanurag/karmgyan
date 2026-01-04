@@ -5,7 +5,17 @@ Supports both Pythagorean and Chaldean systems
 """
 
 import json
+import sys
 from datetime import datetime
+import random
+
+# Try to import Faker, but make it optional
+try:
+    from faker import Faker
+    FAKER_AVAILABLE = True
+except ImportError:
+    FAKER_AVAILABLE = False
+    Faker = None
 
 # Pythagorean system (most common in Western numerology)
 PYTHAGOREAN = {
@@ -354,56 +364,387 @@ def calculate_compatibility(number1, number2):
     }
 
 
-def suggest_name_spellings(base_name, target_number, system='pythagorean', max_suggestions=10):
+def suggest_name_spellings(base_name, target_number, system='pythagorean', max_suggestions=20):
     """
     Suggest alternative spellings of a name to achieve a target number
+    Enhanced with more variations and common name patterns
     """
     suggestions = []
-    
-    # Try different variations
-    # 1. Add/remove vowels
-    # 2. Double letters
-    # 3. Replace similar sounding letters
+    seen_names = set()
     
     vowels_to_add = ['A', 'E', 'I', 'O', 'U']
-    common_doubles = ['N', 'L', 'R', 'S', 'T']
+    common_doubles = ['N', 'L', 'R', 'S', 'T', 'M', 'P']
+    
+    # Letter substitutions that maintain similar sound
+    letter_substitutions = {
+        'C': ['K', 'S'],
+        'K': ['C', 'Q'],
+        'S': ['C', 'Z'],
+        'Z': ['S'],
+        'F': ['PH'],
+        'PH': ['F'],
+        'J': ['G'],
+        'G': ['J'],
+        'X': ['KS', 'Z'],
+        'Q': ['K', 'KW'],
+    }
     
     base_name_upper = base_name.upper().replace(' ', '')
+    
+    def add_suggestion(name, number, variation_type, exact_match=True):
+        """Helper to add unique suggestions"""
+        name_lower = name.lower()
+        if name_lower not in seen_names and number == target_number:
+            seen_names.add(name_lower)
+            suggestions.append({
+                'name': name.title(),
+                'number': number,
+                'exact_match': exact_match,
+                'variation_type': variation_type
+            })
     
     # Original name
     original = calculate_name_number(base_name, system)
     if original['reduced'] == target_number:
-        suggestions.append({
-            'name': base_name,
-            'number': original['reduced'],
-            'exact_match': True,
-            'variation_type': 'Original'
-        })
+        add_suggestion(base_name, original['reduced'], 'Original')
     
     # Try adding vowels at the end
     for vowel in vowels_to_add:
         variant = base_name + vowel.lower()
         result = calculate_name_number(variant, system)
-        if result['reduced'] == target_number:
-            suggestions.append({
-                'name': variant.title(),
-                'number': result['reduced'],
-                'exact_match': True,
-                'variation_type': f'Added {vowel} at end'
-            })
+        add_suggestion(variant, result['reduced'], f'Added {vowel} at end')
+    
+    # Try adding vowels at the beginning
+    for vowel in vowels_to_add:
+        variant = vowel.lower() + base_name
+        result = calculate_name_number(variant, system)
+        add_suggestion(variant, result['reduced'], f'Added {vowel} at start')
     
     # Try doubling letters
     for i, char in enumerate(base_name_upper):
         if char in common_doubles:
             variant = base_name[:i+1] + char.lower() + base_name[i+1:]
             result = calculate_name_number(variant, system)
+            add_suggestion(variant, result['reduced'], f'Doubled {char}')
+    
+    # Try letter substitutions
+    for i, char in enumerate(base_name_upper):
+        if char in letter_substitutions:
+            for sub in letter_substitutions[char]:
+                variant = base_name[:i] + sub.lower() + base_name[i+1:]
+                result = calculate_name_number(variant, system)
+                add_suggestion(variant, result['reduced'], f'Replaced {char} with {sub}')
+    
+    # Try adding common suffixes
+    common_suffixes = ['a', 'e', 'i', 'ia', 'ya', 'an', 'en', 'in', 'on', 'un']
+    for suffix in common_suffixes:
+        variant = base_name + suffix
+        result = calculate_name_number(variant, system)
+        add_suggestion(variant, result['reduced'], f'Added suffix "{suffix}"')
+    
+    # Try adding common prefixes
+    common_prefixes = ['a', 'e', 'i', 'o', 'u', 'de', 'le', 'la']
+    for prefix in common_prefixes:
+        variant = prefix + base_name
+        result = calculate_name_number(variant, system)
+        add_suggestion(variant, result['reduced'], f'Added prefix "{prefix}"')
+    
+    # Try removing last letter
+    if len(base_name) > 2:
+        variant = base_name[:-1]
+        result = calculate_name_number(variant, system)
+        add_suggestion(variant, result['reduced'], 'Removed last letter')
+    
+    # Try removing first letter
+    if len(base_name) > 2:
+        variant = base_name[1:]
+        result = calculate_name_number(variant, system)
+        add_suggestion(variant, result['reduced'], 'Removed first letter')
+    
+    # Generate names from common name database (if we had one)
+    # For now, return what we have
+    return suggestions[:max_suggestions]
+
+
+# Locale mapping for Faker
+LOCALE_MAP = {
+    'en': 'en_US',
+    'hi': 'hi_IN',
+    'fr': 'fr_FR',
+}
+
+# Cache for Faker instances
+_faker_cache = {}
+
+def _get_faker(locale):
+    """Get or create a cached Faker instance for the locale"""
+    if not FAKER_AVAILABLE:
+        raise ImportError("Faker library is not installed")
+    if locale not in _faker_cache:
+        try:
+            _faker_cache[locale] = Faker(locale)
+        except Exception as e:
+            # Fallback to default locale if specified locale fails
+            print(f"Warning: Failed to create Faker with locale {locale}: {e}, using en_US", file=sys.stderr)
+            _faker_cache[locale] = Faker('en_US')
+    return _faker_cache[locale]
+
+def _generate_faker_names(language, gender, count=100):
+    """
+    Generate names using Faker library
+    Args:
+        language: Language code (en, hi, fr)
+        gender: 'male', 'female', or None for both
+        count: Number of names to generate
+    Returns:
+        List of generated names
+    """
+    try:
+        locale = LOCALE_MAP.get(language, 'en_US')
+        faker = _get_faker(locale)
+        
+        names = []
+        
+        # Generate names based on gender
+        if gender == 'male':
+            for _ in range(count):
+                names.append(faker.first_name_male())
+        elif gender == 'female':
+            for _ in range(count):
+                names.append(faker.first_name_female())
+        else:
+            # Mix of both
+            for _ in range(count):
+                if random.random() < 0.5:
+                    names.append(faker.first_name_male())
+                else:
+                    names.append(faker.first_name_female())
+        
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_names = []
+        for name in names:
+            name_lower = name.lower()
+            if name_lower not in seen:
+                seen.add(name_lower)
+                unique_names.append(name)
+        
+        return unique_names
+    except Exception as e:
+        # If Faker fails, return empty list and let algorithmic generation handle it
+        # Print to stderr to avoid interfering with JSON output
+        print(f"Warning: Faker name generation failed: {e}", file=sys.stderr)
+        return []
+
+def _find_close_matches(names, target_number, system):
+    """
+    Find names that are close to the target numerology number
+    Returns names that are within 2 numbers of the target
+    """
+    close_matches = []
+    for name in names:
+        result = calculate_name_number(name, system)
+        current_num = result['reduced']
+        # Include if within 2 numbers (accounting for wrap-around)
+        diff = abs(current_num - target_number)
+        # Check for wrap-around (e.g., 9 is close to 1)
+        wrap_diff = min(diff, 9 - diff + 1) if target_number <= 9 else diff
+        if wrap_diff <= 2:
+            close_matches.append(name)
+    return close_matches
+
+def _modify_names_to_match(names, target_number, system, exclude_set, max_variations=5):
+    """
+    Algorithmically modify names to match target numerology number
+    Returns list of modified names that match the target
+    """
+    suggestions = []
+    mapping = PYTHAGOREAN if system == 'pythagorean' else CHALDEAN
+    
+    for name in names[:20]:  # Limit to first 20 for performance
+        if name.lower() in exclude_set:
+            continue
+            
+        name_upper = name.upper()
+        current_result = calculate_name_number(name, system)
+        current_num = current_result['reduced']
+        
+        if current_num == target_number:
+            continue  # Already matches
+        
+        # Try adding letters to adjust the number
+        # Common letters and their values for quick adjustment
+        adjustment_letters = ['A', 'E', 'I', 'O', 'U', 'L', 'N', 'R', 'S', 'T']
+        
+        for letter in adjustment_letters:
+            letter_value = mapping.get(letter, 0)
+            if letter_value == 0:
+                continue
+            
+            # Try adding letter at the end
+            new_name = name + letter.lower()
+            new_result = calculate_name_number(new_name, system)
+            if new_result['reduced'] == target_number and new_name.lower() not in exclude_set:
+                suggestions.append(new_name)
+                exclude_set.add(new_name.lower())
+                if len(suggestions) >= max_variations:
+                    return suggestions
+            
+            # Try adding letter at the beginning
+            new_name = letter.lower() + name
+            new_result = calculate_name_number(new_name, system)
+            if new_result['reduced'] == target_number and new_name.lower() not in exclude_set:
+                suggestions.append(new_name)
+                exclude_set.add(new_name.lower())
+                if len(suggestions) >= max_variations:
+                    return suggestions
+        
+        # Try doubling a letter
+        for i, char in enumerate(name_upper):
+            if char.isalpha():
+                new_name = name[:i+1] + char.lower() + name[i+1:]
+                new_result = calculate_name_number(new_name, system)
+                if new_result['reduced'] == target_number and new_name.lower() not in exclude_set:
+                    suggestions.append(new_name)
+                    exclude_set.add(new_name.lower())
+                    if len(suggestions) >= max_variations:
+                        return suggestions
+                    break
+    
+    return suggestions
+
+def _generate_names_algorithmically(target_number, system, language, gender, exclude_set, count=10):
+    """
+    Generate names algorithmically to match target numerology number
+    This is a fallback when Faker doesn't provide enough matches
+    """
+    suggestions = []
+    mapping = PYTHAGOREAN if system == 'pythagorean' else CHALDEAN
+    
+    # Common name patterns/roots by language
+    name_roots = {
+        'en': ['Alex', 'Sam', 'John', 'Mary', 'Emma', 'Liam', 'Noah', 'Olivia', 'Sophia', 'James', 'Anna', 'David', 'Sarah', 'Michael', 'Emily', 'Daniel', 'Jessica', 'Matthew', 'Ashley', 'Christopher', 'Robert', 'Jennifer', 'William', 'Elizabeth', 'Thomas', 'Lisa', 'Richard', 'Nancy', 'Joseph', 'Karen'],
+        'hi': ['Arjun', 'Priya', 'Rohan', 'Ananya', 'Krishna', 'Sneha', 'Aryan', 'Kavya', 'Aditya', 'Divya', 'Rahul', 'Meera', 'Vikram', 'Pooja', 'Amit', 'Sunita', 'Raj', 'Kavita', 'Abhishek', 'Ritu'],
+        'fr': ['Pierre', 'Marie', 'Jean', 'Sophie', 'Louis', 'Camille', 'Antoine', 'Claire', 'François', 'Élise', 'Henri', 'Juliette', 'Charles', 'Amélie', 'Philippe', 'Céline'],
+    }
+    
+    roots = name_roots.get(language, name_roots['en'])
+    
+    attempts = 0
+    max_attempts = count * 30  # Increased attempts
+    
+    # Try different approaches
+    suffixes = ['a', 'e', 'i', 'ia', 'ya', 'ie', 'y', 'an', 'en', 'in', 'on', 'ah', 'eh', 'oh', 'ee', 'ay']
+    prefixes = ['a', 'e', 'i', 'o', 'u']
+    
+    while len(suggestions) < count and attempts < max_attempts:
+        attempts += 1
+        
+        # Start with a root name
+        root = random.choice(roots)
+        
+        # Approach 1: Try adding suffixes
+        for suffix in suffixes:
+            name = root + suffix
+            if name.lower() in exclude_set:
+                continue
+            
+            result = calculate_name_number(name, system)
             if result['reduced'] == target_number:
-                suggestions.append({
-                    'name': variant.title(),
-                    'number': result['reduced'],
-                    'exact_match': True,
-                    'variation_type': f'Doubled {char}'
-                })
+                suggestions.append(name)
+                exclude_set.add(name.lower())
+                if len(suggestions) >= count:
+                    return suggestions
+                break
+        
+        # Approach 2: Try adding prefixes
+        for prefix in prefixes:
+            name = prefix + root.lower()
+            if name.lower() in exclude_set:
+                continue
+            
+            result = calculate_name_number(name, system)
+            if result['reduced'] == target_number:
+                suggestions.append(name)
+                exclude_set.add(name.lower())
+                if len(suggestions) >= count:
+                    return suggestions
+                break
+        
+        # Approach 3: Try modifying letters
+        if len(root) > 2:
+            for i in range(len(root)):
+                for letter in 'aeiou':
+                    name = root[:i] + letter + root[i+1:]
+                    if name.lower() in exclude_set:
+                        continue
+                    
+                    result = calculate_name_number(name, system)
+                    if result['reduced'] == target_number:
+                        suggestions.append(name)
+                        exclude_set.add(name.lower())
+                        if len(suggestions) >= count:
+                            return suggestions
+                        break
+                if len(suggestions) >= count:
+                    break
+    
+    return suggestions
+
+def suggest_names_by_number(target_number, system='pythagorean', max_suggestions=20, name_length=None, language='en', religion=None, gender=None, exclude_names=None):
+    """
+    Suggest names that match a target number
+    Uses Faker library for authentic cultural names, with algorithmic fallback
+    Supports multiple languages, religions, and genders
+    """
+    suggestions = []
+    exclude_set = set(name.lower() for name in (exclude_names or []))
+    
+    # Step 1: Use Faker to generate authentic names
+    faker_names = _generate_faker_names(language, gender, count=100)
+    
+    # Step 2: Filter by numerology and exclude duplicates
+    for name in faker_names:
+        if name.lower() in exclude_set:
+            continue
+        result = calculate_name_number(name, system)
+        if result['reduced'] == target_number:
+            suggestions.append({
+                'name': name,
+                'number': result['reduced'],
+                'exact_match': True,
+                'variation_type': f'{language.upper()} name'
+            })
+            exclude_set.add(name.lower())
+            if len(suggestions) >= max_suggestions:
+                return suggestions
+    
+    # Step 3: If not enough matches, try algorithmic modification
+    if len(suggestions) < max_suggestions:
+        close_matches = _find_close_matches(faker_names, target_number, system)
+        modified = _modify_names_to_match(close_matches, target_number, system, exclude_set, max_variations=max_suggestions - len(suggestions))
+        for name in modified:
+            result = calculate_name_number(name, system)
+            suggestions.append({
+                'name': name,
+                'number': result['reduced'],
+                'exact_match': True,
+                'variation_type': 'Modified name'
+            })
+            exclude_set.add(name.lower())
+    
+    # Step 4: If still not enough, generate algorithmically
+    if len(suggestions) < max_suggestions:
+        generated = _generate_names_algorithmically(target_number, system, language, gender, exclude_set, count=max_suggestions - len(suggestions))
+        for name in generated:
+            result = calculate_name_number(name, system)
+            suggestions.append({
+                'name': name,
+                'number': result['reduced'],
+                'exact_match': True,
+                'variation_type': 'Generated name'
+            })
+            exclude_set.add(name.lower())
     
     return suggestions[:max_suggestions]
 
@@ -449,6 +790,103 @@ def get_lucky_details(number):
         'career_paths': info.get('career', []),
         'strengths': info.get('strengths', []),
         'weaknesses': info.get('weaknesses', [])
+    }
+
+
+def calculate_loshu_grid(birth_date):
+    """
+    Calculate Loshu Grid (Magic Square) based on date of birth
+    Loshu Grid is a 3x3 grid where numbers 1-9 are placed based on date of birth
+    
+    Grid layout:
+    4 | 9 | 2
+    ---------
+    3 | 5 | 7
+    ---------
+    8 | 1 | 6
+    
+    Each position represents different aspects of life:
+    - Top row: Mental plane (4=Education, 9=Spirituality, 2=Emotions)
+    - Middle row: Physical plane (3=Creativity, 5=Communication, 7=Intuition)
+    - Bottom row: Material plane (8=Authority, 1=Self, 6=Service)
+    
+    Numbers from date of birth are placed in the grid.
+    Missing numbers indicate areas that need development.
+    """
+    # Parse date if string
+    if isinstance(birth_date, str):
+        birth_date = datetime.strptime(birth_date, '%Y-%m-%d')
+    
+    day = birth_date.day
+    month = birth_date.month
+    year = birth_date.year
+    
+    # Extract all digits from date
+    date_str = f"{day:02d}{month:02d}{year}"
+    digits = [int(d) for d in date_str if d.isdigit()]
+    
+    # Count occurrences of each number (1-9) in the date
+    number_counts = {i: digits.count(i) for i in range(1, 10)}
+    
+    # Loshu Grid positions (traditional layout)
+    grid_positions = {
+        1: {'row': 2, 'col': 1, 'aspect': 'Self, Leadership, Independence', 'plane': 'Material'},
+        2: {'row': 0, 'col': 2, 'aspect': 'Emotions, Cooperation, Partnership', 'plane': 'Mental'},
+        3: {'row': 1, 'col': 0, 'aspect': 'Creativity, Expression, Communication', 'plane': 'Physical'},
+        4: {'row': 0, 'col': 0, 'aspect': 'Education, Knowledge, Foundation', 'plane': 'Mental'},
+        5: {'row': 1, 'col': 1, 'aspect': 'Communication, Versatility, Freedom', 'plane': 'Physical'},
+        6: {'row': 2, 'col': 2, 'aspect': 'Service, Responsibility, Nurturing', 'plane': 'Material'},
+        7: {'row': 1, 'col': 2, 'aspect': 'Intuition, Spirituality, Analysis', 'plane': 'Physical'},
+        8: {'row': 2, 'col': 0, 'aspect': 'Authority, Material Success, Power', 'plane': 'Material'},
+        9: {'row': 0, 'col': 1, 'aspect': 'Spirituality, Wisdom, Completion', 'plane': 'Mental'},
+    }
+    
+    # Build grid (3x3)
+    grid = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+    grid_details = []
+    
+    for num in range(1, 10):
+        count = number_counts.get(num, 0)
+        pos = grid_positions[num]
+        row = pos['row']
+        col = pos['col']
+        
+        # Place number in grid (use count as indicator, or just 1 if present)
+        grid[row][col] = num if count > 0 else 0
+        
+        grid_details.append({
+            'number': num,
+            'count': count,
+            'present': count > 0,
+            'row': row,
+            'col': col,
+            'aspect': pos['aspect'],
+            'plane': pos['plane'],
+            'meaning': NUMBER_MEANINGS.get(num, {}).get('title', ''),
+        })
+    
+    # Calculate missing numbers (weak areas)
+    missing_numbers = [num for num in range(1, 10) if number_counts.get(num, 0) == 0]
+    
+    # Calculate strong numbers (appear multiple times)
+    strong_numbers = [num for num in range(1, 10) if number_counts.get(num, 0) > 1]
+    
+    # Calculate life path for additional context
+    life_path = calculate_life_path_number(birth_date)
+    
+    return {
+        'grid': grid,
+        'grid_details': grid_details,
+        'number_counts': number_counts,
+        'missing_numbers': missing_numbers,
+        'strong_numbers': strong_numbers,
+        'life_path_number': life_path['number'],
+        'date': birth_date.strftime('%Y-%m-%d'),
+        'interpretation': {
+            'missing': f"Numbers {', '.join(map(str, missing_numbers))} are missing - these areas may need development",
+            'strong': f"Numbers {', '.join(map(str, strong_numbers))} appear multiple times - these are your strengths",
+            'summary': f"Your Loshu Grid shows {len([n for n in range(1, 10) if number_counts.get(n, 0) > 0])} numbers present out of 9"
+        }
     }
 
 

@@ -878,6 +878,138 @@ def compute_panchang(date_str, latitude, longitude, timezone_str):
     except Exception as e:
         return {'error': str(e)}
 
+def compute_muhurat(date_str, latitude, longitude, timezone_str, event_type='general'):
+    """Compute auspicious times (Muhurat) for a given date and event type"""
+    try:
+        # Get panchang data for the date
+        panchang_data = compute_panchang(date_str, latitude, longitude, timezone_str)
+        
+        if 'error' in panchang_data:
+            return panchang_data
+        
+        # Parse date for calculations
+        date_midnight = datetime.strptime(date_str + " 00:00:00", "%Y-%m-%d %H:%M:%S")
+        jd_midnight, tz_offset, _ = datetime_to_jd_ut(date_midnight, timezone_str, longitude)
+        
+        # Calculate sunrise and sunset times
+        geopos = [longitude, latitude, 0.0]
+        sunrise_result = swe.rise_trans(jd_midnight, swe.SUN, swe.CALC_RISE, geopos, 0.0, 0.0)
+        sunset_result = swe.rise_trans(jd_midnight, swe.SUN, swe.CALC_SET, geopos, 0.0, 0.0)
+        
+        def jd_to_time_str(jd_time, tz_offset_hours):
+            """Convert Julian Day to time string in local timezone"""
+            year, month, day, hour = swe.revjul(jd_time)
+            minute = int((hour - int(hour)) * 60)
+            hour = int(hour)
+            local_hour = hour + int(tz_offset_hours)
+            local_minute = minute + int((tz_offset_hours - int(tz_offset_hours)) * 60)
+            if local_minute >= 60:
+                local_hour += 1
+                local_minute -= 60
+            elif local_minute < 0:
+                local_hour -= 1
+                local_minute += 60
+            if local_hour >= 24:
+                local_hour -= 24
+            elif local_hour < 0:
+                local_hour += 24
+            return f"{local_hour:02d}:{local_minute:02d}"
+        
+        sunrise_jd = sunrise_result[1][0] if sunrise_result[0] == 0 else None
+        sunset_jd = sunset_result[1][0] if sunset_result[0] == 0 else None
+        
+        sunrise_time = jd_to_time_str(sunrise_jd, tz_offset) if sunrise_jd else "06:00"
+        sunset_time = jd_to_time_str(sunset_jd, tz_offset) if sunset_jd else "18:00"
+        
+        # Extract sunrise and sunset hour/minute
+        sunrise_hour, sunrise_min = map(int, sunrise_time.split(':'))
+        sunset_hour, sunset_min = map(int, sunset_time.split(':'))
+        
+        # Calculate day duration in minutes
+        day_start_minutes = sunrise_hour * 60 + sunrise_min
+        day_end_minutes = sunset_hour * 60 + sunset_min
+        day_duration = day_end_minutes - day_start_minutes
+        
+        # Divide day into 8 parts (Ashtamangala Muhurat)
+        part_duration = day_duration / 8
+        muhurats = []
+        
+        # Auspicious nakshatras (varies by event type)
+        auspicious_nakshatras = {
+            'general': ['Rohini', 'Mrigashira', 'Pushya', 'Uttara Phalguni', 'Hasta', 'Swati', 'Anuradha', 'Shravana', 'Dhanishta', 'Uttara Bhadrapada', 'Revati'],
+            'marriage': ['Rohini', 'Mrigashira', 'Pushya', 'Uttara Phalguni', 'Hasta', 'Swati', 'Anuradha', 'Shravana', 'Dhanishta', 'Uttara Bhadrapada', 'Revati'],
+            'business': ['Pushya', 'Hasta', 'Swati', 'Anuradha', 'Shravana', 'Dhanishta'],
+            'travel': ['Mrigashira', 'Pushya', 'Hasta', 'Swati', 'Anuradha', 'Shravana'],
+            'house_warming': ['Rohini', 'Pushya', 'Uttara Phalguni', 'Hasta', 'Swati', 'Anuradha', 'Shravana', 'Dhanishta']
+        }
+        
+        current_nakshatra = panchang_data.get('nakshatra', '')
+        is_auspicious_nakshatra = current_nakshatra in auspicious_nakshatras.get(event_type, auspicious_nakshatras['general'])
+        
+        # Generate muhurat times (8 parts of the day)
+        for i in range(8):
+            start_minutes = day_start_minutes + (i * part_duration)
+            end_minutes = day_start_minutes + ((i + 1) * part_duration)
+            
+            start_hour = int(start_minutes // 60)
+            start_min = int(start_minutes % 60)
+            end_hour = int(end_minutes // 60)
+            end_min = int(end_minutes % 60)
+            
+            time_str = f"{start_hour:02d}:{start_min:02d} - {end_hour:02d}:{end_min:02d}"
+            
+            # Determine quality based on time of day and panchang
+            # First and last parts are generally less auspicious
+            if i == 0 or i == 7:
+                quality = 'moderate'
+                description = 'Early morning or evening - moderate auspiciousness'
+            elif i in [2, 3, 4, 5]:  # Mid-day parts
+                quality = 'excellent' if is_auspicious_nakshatra else 'good'
+                description = 'Mid-day period - highly auspicious' if is_auspicious_nakshatra else 'Mid-day period - good time'
+            else:
+                quality = 'good'
+                description = 'Good auspicious time'
+            
+            # Check if time conflicts with Rahu Kaal, Gulika Kaal, or Yamaghanda
+            rahu_kaal = panchang_data.get('rahu_kaal', '')
+            if rahu_kaal and rahu_kaal != 'N/A':
+                try:
+                    rahu_start, rahu_end = rahu_kaal.split('-')
+                    rahu_start_min = int(rahu_start.split(':')[0]) * 60 + int(rahu_start.split(':')[1])
+                    rahu_end_min = int(rahu_end.split(':')[0]) * 60 + int(rahu_end.split(':')[1])
+                    if not (end_minutes <= rahu_start_min or start_minutes >= rahu_end_min):
+                        quality = 'poor'
+                        description = 'Overlaps with Rahu Kaal - not auspicious'
+                except:
+                    pass  # Ignore parsing errors
+            
+            muhurats.append({
+                'time': time_str,
+                'start_time': f"{start_hour:02d}:{start_min:02d}",
+                'end_time': f"{end_hour:02d}:{end_min:02d}",
+                'quality': quality,
+                'description': description,
+                'part': i + 1
+            })
+        
+        return {
+            'date': date_str,
+            'event_type': event_type,
+            'panchang': panchang_data,
+            'muhurats': muhurats,
+            'best_times': [m for m in muhurats if m['quality'] == 'excellent'],
+            'summary': {
+                'total_muhurats': len(muhurats),
+                'excellent': len([m for m in muhurats if m['quality'] == 'excellent']),
+                'good': len([m for m in muhurats if m['quality'] == 'good']),
+                'moderate': len([m for m in muhurats if m['quality'] == 'moderate']),
+                'poor': len([m for m in muhurats if m['quality'] == 'poor'])
+            }
+        }
+    except Exception as e:
+        import traceback
+        return {'error': str(e), 'traceback': traceback.format_exc()}
+
 def compute_compatibility(person1_data, person2_data):
     """Compute Ashtakoota compatibility between two persons"""
     try:
@@ -977,7 +1109,7 @@ def compute_compatibility(person1_data, person2_data):
 
 def main():
     parser = argparse.ArgumentParser(description='Compute astrological charts (North Indian System) and Numerology')
-    parser.add_argument('--type', required=True, choices=['birth-chart', 'dasha', 'divisional', 'panchang', 'compatibility', 'numerology'])
+    parser.add_argument('--type', required=True, choices=['birth-chart', 'dasha', 'divisional', 'panchang', 'compatibility', 'numerology', 'muhurat'])
     parser.add_argument('--date', required=False)
     parser.add_argument('--time', required=False)
     parser.add_argument('--latitude', type=float, required=False)
@@ -986,12 +1118,18 @@ def main():
     parser.add_argument('--chart-type', default='D9')
     parser.add_argument('--person1', required=False)
     parser.add_argument('--person2', required=False)
+    parser.add_argument('--event-type', default='general', help='Event type for muhurat: general, marriage, business, travel, house_warming')
     # Numerology arguments
     parser.add_argument('--name', required=False)
-    parser.add_argument('--numerology-action', choices=['analyze', 'compatibility', 'suggest'], default='analyze')
+    parser.add_argument('--numerology-action', choices=['analyze', 'compatibility', 'suggest', 'calculate-name-number', 'loshu-grid', 'suggest-by-number'], default='analyze')
     parser.add_argument('--number1', type=int, required=False)
     parser.add_argument('--number2', type=int, required=False)
     parser.add_argument('--target-number', type=int, required=False)
+    parser.add_argument('--name-length', type=int, required=False)
+    parser.add_argument('--language', default='en', help='Language code: en, hi, fr, etc.')
+    parser.add_argument('--religion', required=False, help='Religion: hindu, christian, muslim, jewish, sikh, etc.')
+    parser.add_argument('--gender', required=False, help='Gender: male, female, or None for both')
+    parser.add_argument('--exclude-names', required=False, help='JSON array of names to exclude')
     parser.add_argument('--system', choices=['pythagorean', 'chaldean'], default='pythagorean')
     
     args = parser.parse_args()
@@ -1028,6 +1166,17 @@ def main():
                     args.longitude if args.longitude is not None else 77.2090,
                     args.timezone
                 )
+        elif args.type == 'muhurat':
+            if not args.date:
+                result = {'error': 'Date is required for muhurat'}
+            else:
+                result = compute_muhurat(
+                    args.date,
+                    args.latitude if args.latitude is not None else 28.6139,
+                    args.longitude if args.longitude is not None else 77.2090,
+                    args.timezone,
+                    args.event_type
+                )
         elif args.type == 'compatibility':
             if not args.person1 or not args.person2:
                 result = {'error': 'Both person1 and person2 are required'}
@@ -1057,6 +1206,51 @@ def main():
                         'base_name': args.name,
                         'target_number': args.target_number,
                         'suggestions': num.suggest_name_spellings(args.name, args.target_number, args.system)
+                    }
+            elif args.numerology_action == 'calculate-name-number':
+                if not args.name:
+                    result = {'error': 'Name is required'}
+                else:
+                    name_result = num.calculate_name_number(args.name, args.system)
+                    result = {
+                        'name': args.name,
+                        'system': args.system,
+                        'number': name_result['reduced'],
+                        'total': name_result['total'],
+                        'breakdown': name_result['breakdown'],
+                        'meaning': num.NUMBER_MEANINGS.get(name_result['reduced'], {})
+                    }
+            elif args.numerology_action == 'loshu-grid':
+                if not args.date:
+                    result = {'error': 'Date is required for Loshu grid'}
+                else:
+                    result = num.calculate_loshu_grid(args.date)
+            elif args.numerology_action == 'suggest-by-number':
+                if args.target_number is None:
+                    result = {'error': 'Target number is required'}
+                else:
+                    exclude_names = None
+                    if hasattr(args, 'exclude_names') and args.exclude_names:
+                        try:
+                            exclude_names = json.loads(args.exclude_names) if isinstance(args.exclude_names, str) else args.exclude_names
+                        except:
+                            exclude_names = None
+                    
+                    result = {
+                        'target_number': args.target_number,
+                        'system': args.system,
+                        'language': args.language,
+                        'religion': args.religion,
+                        'gender': args.gender if hasattr(args, 'gender') else None,
+                        'suggestions': num.suggest_names_by_number(
+                            args.target_number, 
+                            args.system, 
+                            name_length=args.name_length,
+                            language=args.language,
+                            religion=args.religion,
+                            gender=args.gender if hasattr(args, 'gender') else None,
+                            exclude_names=exclude_names
+                        )
                     }
         else:
             result = {'error': 'Invalid type'}

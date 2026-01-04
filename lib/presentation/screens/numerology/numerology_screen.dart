@@ -4,6 +4,7 @@ import '../../../config/app_theme.dart';
 import 'analyze_name_tab.dart';
 import 'compatibility_tab.dart';
 import 'suggest_names_tab.dart';
+import 'loshu_grid_tab.dart';
 
 class NumerologyScreen extends ConsumerStatefulWidget {
   const NumerologyScreen({super.key});
@@ -19,7 +20,7 @@ class _NumerologyScreenState extends ConsumerState<NumerologyScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -113,6 +114,7 @@ class _NumerologyScreenState extends ConsumerState<NumerologyScreen>
                     Tab(text: 'Analyze'),
                     Tab(text: 'Compatibility'),
                     Tab(text: 'Suggest Names'),
+                    Tab(text: 'Loshu Grid'),
                   ],
                 ),
               ),
@@ -127,6 +129,7 @@ class _NumerologyScreenState extends ConsumerState<NumerologyScreen>
                     AnalyzeNameTab(),
                     CompatibilityTab(),
                     SuggestNamesTab(),
+                    LoshuGridTab(),
                   ],
                 ),
               ),

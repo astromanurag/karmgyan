@@ -122,6 +122,117 @@ class NumerologyService {
     }
   }
 
+  /// Calculate number for a name
+  Future<Map<String, dynamic>> calculateNameNumber({
+    required String name,
+    String system = 'pythagorean',
+  }) async {
+    try {
+      print('🔢 Calculating number for name: $name');
+      
+      final response = await _dio.post(
+        '/api/numerology/calculate-name-number',
+        data: {
+          'name': name,
+          'system': system,
+        },
+      );
+
+      print('✅ Name number calculated: ${response.data['number']}');
+      
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        return response.data;
+      } else {
+        throw Exception(response.data['error'] ?? 'Failed to calculate name number');
+      }
+    } on DioException catch (e) {
+      print('❌ Network error: ${e.message}');
+      throw Exception('Network error: ${e.message}');
+    } catch (e) {
+      print('❌ Error calculating name number: $e');
+      throw Exception('Error calculating name number: $e');
+    }
+  }
+
+  /// Get Loshu grid for a birth date
+  Future<Map<String, dynamic>> getLoshuGrid({
+    required DateTime birthDate,
+  }) async {
+    try {
+      final dateStr = '${birthDate.year}-${birthDate.month.toString().padLeft(2, '0')}-${birthDate.day.toString().padLeft(2, '0')}';
+      print('🔢 Calculating Loshu grid for date: $dateStr');
+      
+      final response = await _dio.post(
+        '/api/numerology/loshu-grid',
+        data: {
+          'birthDate': dateStr,
+        },
+      );
+
+      print('✅ Loshu grid calculated');
+      
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        return response.data;
+      } else {
+        throw Exception(response.data['error'] ?? 'Failed to calculate Loshu grid');
+      }
+    } on DioException catch (e) {
+      print('❌ Network error: ${e.message}');
+      throw Exception('Network error: ${e.message}');
+    } catch (e) {
+      print('❌ Error calculating Loshu grid: $e');
+      throw Exception('Error calculating Loshu grid: $e');
+    }
+  }
+
+  /// Suggest names by number (without base name)
+  Future<Map<String, dynamic>> suggestNamesByNumber({
+    required int targetNumber,
+    String system = 'pythagorean',
+    int? nameLength,
+    String language = 'en',
+    String? religion,
+    String? gender,
+    List<String>? excludeNames,
+  }) async {
+    try {
+      print('🔢 Suggesting names for number: $targetNumber');
+      
+      final response = await _dio.post(
+        '/api/numerology/suggest-names-by-number',
+        data: {
+          'targetNumber': targetNumber,
+          'system': system,
+          if (nameLength != null) 'nameLength': nameLength,
+          'language': language,
+          if (religion != null) 'religion': religion,
+          if (gender != null) 'gender': gender,
+          if (excludeNames != null && excludeNames.isNotEmpty) 'excludeNames': excludeNames,
+        },
+      );
+
+      print('✅ Names suggested: ${response.data['suggestions']?.length ?? 0}');
+      print('Response data: ${response.data}');
+      
+      if (response.statusCode == 200) {
+        // Handle both success: true and direct result formats
+        if (response.data['success'] == true || response.data['suggestions'] != null) {
+          return response.data;
+        } else {
+          throw Exception(response.data['error'] ?? 'Failed to suggest names');
+        }
+      } else {
+        throw Exception(response.data['error'] ?? 'Failed to suggest names');
+      }
+    } on DioException catch (e) {
+      print('❌ Network error: ${e.message}');
+      throw Exception('Network error: ${e.message}');
+    } catch (e) {
+      print('❌ Error suggesting names: $e');
+      throw Exception('Error suggesting names: $e');
+    }
+  }
+
   /// Get number meanings (1-9, 11, 22, 33)
   Map<String, dynamic> getNumberMeaning(int number) {
     final meanings = {

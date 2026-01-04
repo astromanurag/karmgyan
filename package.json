@@ -1,0 +1,39 @@
+{
+  "name": "karmgyan",
+  "version": "1.0.0",
+  "description": "A comprehensive cross-platform application for personal advisory services built with Flutter and Supabase",
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "backend:install": "cd backend && npm install",
+    "backend:start": "cd backend && npm start",
+    "backend:dev": "cd backend && npm run dev",
+    "flutter:get": "flutter pub get",
+    "flutter:run": "flutter run",
+    "flutter:build": "flutter build",
+    "setup": "npm run backend:install && flutter pub get",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "flutter",
+    "astrology",
+    "advisory",
+    "supabase",
+    "cross-platform",
+    "mobile-app",
+    "personal-advisory",
+    "numerology",
+    "panchang",
+    "compatibility-matching"
+  ],
+  "author": "",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=6.0.0"
+  }
+}

@@ -109,6 +109,7 @@ flutter:
   assets:
     - assets/mock_data/
     - assets/translations/
+    - assets/varga_calculation_formulas.json
     # Optional asset directories (create if needed)
     # - assets/images/
     # - assets/icons/

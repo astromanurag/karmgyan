@@ -30,6 +30,23 @@ class _BirthChartScreenState extends ConsumerState<BirthChartScreen> {
   Map<String, dynamic>? _dashaData;
 
   @override
+  void initState() {
+    super.initState();
+    
+    // TODO: REMOVE THIS - Default values for testing only
+    // Setting default birth data: 31/10/1987, 6:35 AM, Amroha (28.9052, 78.4673)
+    _nameController.text = 'Test User';
+    _selectedDate = DateTime(1987, 10, 31);
+    _dateController.text = '31/10/1987';
+    _selectedTime = const TimeOfDay(hour: 6, minute: 35);
+    _timeController.text = '06:35';
+    _latitudeController.text = '28.9052';
+    _longitudeController.text = '78.4673';
+    _locationController.text = 'Amroha';
+    // END TODO
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _dateController.dispose();
@@ -124,6 +141,11 @@ class _BirthChartScreenState extends ConsumerState<BirthChartScreen> {
         'longitude': lon,
         'name': _nameController.text,
       });
+      
+      // Store computed birth chart data for varga charts (if computation was successful)
+      if (chartResult.containsKey('planets')) {
+        await LocalStorageService.save('birth_chart_data', chartResult);
+      }
     } catch (e) {
       setState(() {
         _isLoading = false;

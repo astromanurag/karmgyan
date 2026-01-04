@@ -38,10 +38,10 @@ RUN flutter config --enable-web && \
 # Set working directory
 WORKDIR /app
 
-# Copy pubspec files
-COPY pubspec.yaml pubspec.lock ./
+# Copy pubspec.yaml first (without lock file to allow dependency resolution)
+COPY pubspec.yaml ./
 
-# Get Flutter dependencies
+# Get Flutter dependencies (this will generate a compatible pubspec.lock)
 RUN flutter pub get
 
 # Copy application code

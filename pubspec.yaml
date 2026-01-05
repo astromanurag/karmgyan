@@ -4,7 +4,7 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: '>=3.6.0 <4.0.0'
 
 dependencies:
   flutter:
@@ -18,15 +18,15 @@ dependencies:
   supabase_flutter: ^2.5.6
   
   # UI & Navigation
-  go_router: ^17.0.1
-  flutter_svg: ^2.0.9
+  go_router: ^15.1.3
+  flutter_svg: ^2.0.9 
   cached_network_image: ^3.3.1
   shimmer: ^3.0.0
   flutter_staggered_animations: ^1.1.1
   
   # Forms & Validation
-  flutter_form_builder: ^10.2.0
-  form_builder_validators: ^11.2.0
+  flutter_form_builder: ^9.4.0
+  form_builder_validators: ^11.1.2
   # intl is managed by flutter_localizations - no need to specify explicitly
   
   # HTTP & API
@@ -51,8 +51,8 @@ dependencies:
   jiffy: ^6.1.0
   
   # Charts & Visualization
-  fl_chart: ^1.1.1
-  syncfusion_flutter_charts: ^32.1.21
+  fl_chart: ^0.70.0 #1.0.0 is compatible with flutter 3.6.2
+  syncfusion_flutter_charts: ^28.1.36
   
   # AI & ML
   google_mlkit_translation: ^0.13.0
@@ -86,7 +86,7 @@ dependencies:
   json_annotation: ^4.8.1
   connectivity_plus: ^7.0.0
   package_info_plus: ^9.0.0
-  device_info_plus: ^12.3.0
+  device_info_plus: ^10.1.1
   
   # Internationalization
   flutter_localizations:
@@ -96,7 +96,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^6.0.0
+  flutter_lints: ^4.0.0
   build_runner: ^2.4.7
   freezed: ^2.4.6
   json_serializable: ^6.7.1

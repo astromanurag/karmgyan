@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:firebase_messaging/firebase_messaging.dart' if (dart.library.html) 'package:karmgyan/core/services/firebase_messaging_stub.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart' if (dart.library.html) 'package:karmgyan/core/services/flutter_local_notifications_stub.dart';
 
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _notifications = FlutterLocalNotificationsPlugin();

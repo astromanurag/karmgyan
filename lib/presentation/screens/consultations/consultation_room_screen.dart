@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:agora_rtc_engine/agora_rtc_engine.dart';
+import 'package:agora_rtc_engine/agora_rtc_engine.dart' if (dart.library.html) 'package:karmgyan/services/agora_stub.dart';
 import '../../../config/app_theme.dart';
 import '../../../services/video_consultation_service.dart';
 import '../../../services/chat_service.dart';
@@ -72,7 +73,7 @@ class _ConsultationRoomScreenState
           uid: uid,
         );
 
-        if (widget.type == 'video') {
+        if (widget.type == 'video' && !kIsWeb) {
           final engine = VideoConsultationService.engine;
           if (engine != null) {
             _localVideoController = VideoViewController(
@@ -233,6 +234,31 @@ class _ConsultationRoomScreenState
   }
 
   Widget _buildVideoView() {
+    if (kIsWeb) {
+      // Web doesn't support Agora video - show placeholder
+      return Container(
+        color: Colors.black,
+        child: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.videocam_off, color: Colors.white, size: 64),
+              SizedBox(height: 16),
+              Text(
+                'Video calls are not available on web',
+                style: TextStyle(color: Colors.white, fontSize: 18),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Please use the mobile app for video consultations',
+                style: TextStyle(color: Colors.white70, fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
     return Stack(
       children: [
         // Remote video (full screen)

@@ -1,7 +1,10 @@
-import 'package:agora_rtc_engine/agora_rtc_engine.dart';
+import 'package:flutter/foundation.dart';
 import '../config/app_config.dart';
 import '../core/utils/error_handler.dart';
 import 'dart:async';
+
+// Conditional import for Agora (not available on web)
+import 'package:agora_rtc_engine/agora_rtc_engine.dart' if (dart.library.html) 'package:karmgyan/services/agora_stub.dart';
 
 class VideoConsultationService {
   static RtcEngine? _engine;

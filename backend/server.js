@@ -22,6 +22,7 @@ app.use('/api/matching', require('./routes/matching'));
 app.use('/api/panchang', require('./routes/panchang'));
 app.use('/api/numerology', require('./routes/numerology'));
 app.use('/api/ai', require('./routes/ai_predictions'));
+app.use('/api/horoscope', require('./routes/horoscope'));
 
 // Health check
 app.get('/health', (req, res) => {

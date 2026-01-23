@@ -5,6 +5,7 @@ import '../../../config/app_theme.dart';
 import '../../../core/services/local_storage_service.dart';
 import '../../../services/computation_service.dart';
 import '../../../services/pdf_report_service.dart';
+import '../../../services/location_service.dart';
 import '../../widgets/diamond_chart_widget.dart';
 
 class BirthChartScreen extends ConsumerStatefulWidget {
@@ -28,6 +29,12 @@ class _BirthChartScreenState extends ConsumerState<BirthChartScreen> {
   bool _isLoading = false;
   Map<String, dynamic>? _chartData;
   Map<String, dynamic>? _dashaData;
+  
+  // Location search
+  List<PlacePrediction> _placePredictions = [];
+  bool _isSearchingLocation = false;
+  OverlayEntry? _overlayEntry;
+  final LayerLink _layerLink = LayerLink();
 
   @override
   void initState() {
@@ -44,15 +51,132 @@ class _BirthChartScreenState extends ConsumerState<BirthChartScreen> {
     _longitudeController.text = '78.4673';
     _locationController.text = 'Amroha';
     // END TODO
+    
+    // Load stored dasha data if available
+    _loadStoredDashaData();
+    
+    // Add listener for location search
+    _locationController.addListener(_onLocationChanged);
+  }
+  
+  Future<void> _loadStoredDashaData() async {
+    final storedDasha = LocalStorageService.get('dasha_data');
+    if (storedDasha != null && storedDasha is Map<String, dynamic>) {
+      setState(() {
+        _dashaData = storedDasha;
+      });
+    }
+  }
+  
+  void _onLocationChanged() async {
+    final query = _locationController.text.trim();
+    if (query.length < 3) {
+      _hideOverlay();
+      return;
+    }
+    
+    try {
+      setState(() => _isSearchingLocation = true);
+      final predictions = await LocationService.searchPlaces(query);
+      setState(() {
+        _placePredictions = predictions;
+        _isSearchingLocation = false;
+      });
+      
+      if (predictions.isNotEmpty) {
+        _showOverlay();
+      } else {
+        _hideOverlay();
+      }
+    } catch (e) {
+      setState(() => _isSearchingLocation = false);
+      _hideOverlay();
+    }
+  }
+  
+  void _showOverlay() {
+    _hideOverlay();
+    _overlayEntry = _createOverlayEntry();
+    Overlay.of(context).insert(_overlayEntry!);
+  }
+  
+  void _hideOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
+  
+  OverlayEntry _createOverlayEntry() {
+    RenderBox? renderBox = context.findRenderObject() as RenderBox?;
+    final size = renderBox?.size ?? Size.zero;
+    
+    return OverlayEntry(
+      builder: (context) => Positioned(
+        width: size.width,
+        child: CompositedTransformFollower(
+          link: _layerLink,
+          showWhenUnlinked: false,
+          offset: Offset(0.0, size.height),
+          child: Material(
+            elevation: 4.0,
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              constraints: const BoxConstraints(maxHeight: 200),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: _placePredictions.length,
+                itemBuilder: (context, index) {
+                  final prediction = _placePredictions[index];
+                  return ListTile(
+                    leading: const Icon(Icons.location_on),
+                    title: Text(prediction.mainText ?? prediction.description),
+                    subtitle: prediction.secondaryText != null
+                        ? Text(prediction.secondaryText!)
+                        : null,
+                    onTap: () => _selectPlace(prediction),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+  
+  Future<void> _selectPlace(PlacePrediction prediction) async {
+    _hideOverlay();
+    setState(() {
+      _locationController.text = prediction.description;
+      _placePredictions = [];
+    });
+    
+    try {
+      final details = await LocationService.getPlaceDetails(prediction.placeId);
+      if (details != null) {
+        setState(() {
+          _latitudeController.text = details.latitude.toStringAsFixed(6);
+          _longitudeController.text = details.longitude.toStringAsFixed(6);
+          _locationController.text = details.formattedAddress;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error getting location details: $e')),
+        );
+      }
+    }
   }
 
   @override
   void dispose() {
+    _hideOverlay();
     _nameController.dispose();
     _dateController.dispose();
     _timeController.dispose();
     _latitudeController.dispose();
     _longitudeController.dispose();
+    _locationController.removeListener(_onLocationChanged);
     _locationController.dispose();
     super.dispose();
   }
@@ -97,7 +221,7 @@ class _BirthChartScreenState extends ConsumerState<BirthChartScreen> {
     setState(() {
       _isLoading = true;
       _chartData = null;
-      _dashaData = null;
+      // Keep _dashaData until new one is ready for better UX
     });
 
     try {
@@ -145,6 +269,11 @@ class _BirthChartScreenState extends ConsumerState<BirthChartScreen> {
       // Store computed birth chart data for varga charts (if computation was successful)
       if (chartResult.containsKey('planets')) {
         await LocalStorageService.save('birth_chart_data', chartResult);
+      }
+      
+      // Store dasha data for persistence
+      if (dashaResult.isNotEmpty) {
+        await LocalStorageService.save('dasha_data', dashaResult);
       }
     } catch (e) {
       setState(() {
@@ -326,22 +455,37 @@ class _BirthChartScreenState extends ConsumerState<BirthChartScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _locationController,
-                    decoration: InputDecoration(
-                      labelText: 'Search Location (Optional)',
-                      prefixIcon: const Icon(Icons.search_rounded),
-                      border: const OutlineInputBorder(),
-                      helperText: 'Or enter coordinates below',
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.my_location),
-                        onPressed: () {
-                          // TODO: Implement geolocation
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Location search coming soon')),
-                          );
-                        },
+                  CompositedTransformTarget(
+                    link: _layerLink,
+                    child: TextFormField(
+                      controller: _locationController,
+                      decoration: InputDecoration(
+                        labelText: 'Search Location',
+                        prefixIcon: const Icon(Icons.search_rounded),
+                        border: const OutlineInputBorder(),
+                        helperText: 'Search for city or enter coordinates below',
+                        suffixIcon: _isSearchingLocation
+                            ? const Padding(
+                                padding: EdgeInsets.all(12.0),
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                              )
+                            : IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () {
+                                  _locationController.clear();
+                                  _hideOverlay();
+                                },
+                              ),
                       ),
+                      onTap: () {
+                        if (_placePredictions.isNotEmpty) {
+                          _showOverlay();
+                        }
+                      },
                     ),
                   ),
                   const SizedBox(height: 12),

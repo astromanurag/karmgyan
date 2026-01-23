@@ -5,9 +5,22 @@ import 'auth_service.dart';
 import '../core/models/user_model.dart';
 
 class GoogleAuthService {
-  static final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: ['email', 'profile'],
-  );
+  static GoogleSignIn? _googleSignIn;
+  
+  static GoogleSignIn get _signIn {
+    if (_googleSignIn == null) {
+      _googleSignIn = GoogleSignIn(
+        scopes: ['email', 'profile'],
+        // Use platform-specific client IDs if available
+        clientId: AppConfig.hasGoogleOAuthConfig 
+            ? (AppConfig.googleOAuthClientIdWeb.isNotEmpty 
+                ? AppConfig.googleOAuthClientIdWeb 
+                : null)
+            : null,
+      );
+    }
+    return _googleSignIn!;
+  }
 
   static Future<UserModel> signIn() async {
     try {
@@ -17,7 +30,7 @@ class GoogleAuthService {
         return await AuthService.signInWithGoogle('mock_google_token_12345');
       }
 
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      final GoogleSignInAccount? googleUser = await _signIn.signIn();
       if (googleUser == null) {
         throw Exception('Google sign in cancelled');
       }
@@ -34,7 +47,7 @@ class GoogleAuthService {
 
   static Future<void> signOut() async {
     if (!EnvConfig.useMockAuth) {
-      await _googleSignIn.signOut();
+      await _signIn.signOut();
     }
     await AuthService.signOut();
   }
@@ -43,7 +56,7 @@ class GoogleAuthService {
     if (AppConfig.useMockData) {
       return false;
     }
-    return await _googleSignIn.isSignedIn();
+    return await _signIn.isSignedIn();
   }
 }
 

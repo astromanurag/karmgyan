@@ -15,7 +15,8 @@
     "python-shell": "^5.0.0",
     "razorpay": "^2.9.2",
     "@supabase/supabase-js": "^2.38.4",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "axios": "^1.6.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

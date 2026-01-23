@@ -255,6 +255,52 @@ class AuthService {
     await LocalStorageService.remove(_userKey);
   }
 
+  // Clerk Sign In
+  static Future<UserModel> signInWithClerk({
+    required String clerkId,
+    String? phone,
+    String? email,
+    String? name,
+  }) async {
+    if (EnvConfig.useMockAuth) {
+      await Future.delayed(const Duration(seconds: 1));
+      final user = UserModel(
+        id: 'user_${DateTime.now().millisecondsSinceEpoch}',
+        email: email,
+        phone: phone,
+        name: name ?? 'User',
+        role: 'client',
+        authProvider: 'clerk',
+        emailVerified: email != null,
+        phoneVerified: phone != null,
+        createdAt: DateTime.now(),
+      );
+      await _saveUser(user);
+      return user;
+    }
+
+    final response = await http.post(
+      Uri.parse('$_baseUrl/api/auth/clerk/verify'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'clerk_id': clerkId,
+        'phone': phone,
+        'email': email,
+        'name': name,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final user = UserModel.fromJson(data['user']);
+      await _saveToken(data['token']);
+      await _saveUser(user);
+      return user;
+    } else {
+      throw Exception('Clerk sign in failed: ${response.body}');
+    }
+  }
+
   // Helper methods
   static Future<void> _saveToken(String token) async {
     await LocalStorageService.saveString(_tokenKey, token);
@@ -262,6 +308,15 @@ class AuthService {
 
   static Future<void> _saveUser(UserModel user) async {
     await LocalStorageService.saveString(_userKey, jsonEncode(user.toJson()));
+  }
+  
+  // Public methods for saving (used by Clerk service)
+  static Future<void> saveToken(String token) async {
+    await _saveToken(token);
+  }
+  
+  static Future<void> saveUser(UserModel user) async {
+    await _saveUser(user);
   }
 
   static String? getToken() {

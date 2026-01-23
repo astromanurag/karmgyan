@@ -171,7 +171,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/horoscope',
         builder: (context, state) {
           final sign = state.uri.queryParameters['sign'];
-          return DailyHoroscopeScreen(initialSign: sign);
+          return DailyHoroscopeScreen(zodiacSign: sign);
         },
       ),
       GoRoute(

@@ -12,7 +12,7 @@ class PaymentService {
   }) async {
     try {
       // Initialize payment service if needed
-      if (AppConfig.hasRazorpayConfig) {
+      if (AppConfig.hasCashfreeConfig) {
         EnhancedPaymentService.initialize();
       }
 

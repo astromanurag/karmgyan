@@ -23,5 +23,30 @@ class AppConfig {
   static String get agoraAppId => EnvConfig.agoraAppId;
   static String get agoraAppCertificate => EnvConfig.agoraAppCertificate;
   static bool get hasAgoraConfig => EnvConfig.hasAgoraConfig;
+  
+  // Google Places configuration
+  static String get googlePlacesApiKey => EnvConfig.googlePlacesApiKey;
+  static bool get hasGooglePlacesConfig => EnvConfig.hasGooglePlacesConfig;
+  
+  // Google OAuth configuration
+  static String get googleOAuthClientIdWeb => EnvConfig.googleOAuthClientIdWeb;
+  static String get googleOAuthClientIdAndroid => EnvConfig.googleOAuthClientIdAndroid;
+  static String get googleOAuthClientIdIos => EnvConfig.googleOAuthClientIdIos;
+  static bool get hasGoogleOAuthConfig => EnvConfig.hasGoogleOAuthConfig;
+  
+  // Cashfree configuration
+  static String get cashfreeAppId => EnvConfig.cashfreeAppId;
+  static String get cashfreeSecretKey => EnvConfig.cashfreeSecretKey;
+  static String get cashfreeMode => EnvConfig.cashfreeMode;
+  static bool get hasCashfreeConfig => EnvConfig.hasCashfreeConfig;
+  
+  // Clerk configuration
+  static String get clerkPublishableKey => EnvConfig.clerkPublishableKey;
+  static String get clerkSecretKey => EnvConfig.clerkSecretKey;
+  static bool get hasClerkConfig => EnvConfig.hasClerkConfig;
+  
+  // Perplexity configuration
+  static String get perplexityApiKey => EnvConfig.perplexityApiKey;
+  static bool get hasPerplexityConfig => EnvConfig.hasPerplexityConfig;
 }
 

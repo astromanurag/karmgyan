@@ -29,6 +29,57 @@ class EnvConfig {
   static bool? _runtimeMockOverride;
   static bool? _runtimeMockAuthOverride;
 
+  // Helper to get compile-time environment variables
+  // These are set via --dart-define flags during build
+  static String _getCompileTimeEnv(String key) {
+    // We can't use String.fromEnvironment with dynamic keys at runtime
+    // So we check each known key explicitly
+    switch (key) {
+      case 'USE_MOCK_DATA':
+        return const String.fromEnvironment('USE_MOCK_DATA', defaultValue: '');
+      case 'USE_MOCK_AUTH':
+        return const String.fromEnvironment('USE_MOCK_AUTH', defaultValue: '');
+      case 'BACKEND_URL':
+        return const String.fromEnvironment('BACKEND_URL', defaultValue: '');
+      case 'SUPABASE_URL':
+        return const String.fromEnvironment('SUPABASE_URL', defaultValue: '');
+      case 'SUPABASE_PUBLISHABLE_KEY':
+        return const String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY', defaultValue: '');
+      case 'SUPABASE_ANON_KEY':
+        return const String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: '');
+      case 'SUPABASE_SECRET_KEY':
+        return const String.fromEnvironment('SUPABASE_SECRET_KEY', defaultValue: '');
+      case 'RAZORPAY_KEY_ID':
+        return const String.fromEnvironment('RAZORPAY_KEY_ID', defaultValue: '');
+      case 'AGORA_APP_ID':
+        return const String.fromEnvironment('AGORA_APP_ID', defaultValue: '');
+      case 'AGORA_APP_CERTIFICATE':
+        return const String.fromEnvironment('AGORA_APP_CERTIFICATE', defaultValue: '');
+      case 'GOOGLE_PLACES_API_KEY':
+        return const String.fromEnvironment('GOOGLE_PLACES_API_KEY', defaultValue: '');
+      case 'GOOGLE_OAUTH_CLIENT_ID_WEB':
+        return const String.fromEnvironment('GOOGLE_OAUTH_CLIENT_ID_WEB', defaultValue: '');
+      case 'GOOGLE_OAUTH_CLIENT_ID_ANDROID':
+        return const String.fromEnvironment('GOOGLE_OAUTH_CLIENT_ID_ANDROID', defaultValue: '');
+      case 'GOOGLE_OAUTH_CLIENT_ID_IOS':
+        return const String.fromEnvironment('GOOGLE_OAUTH_CLIENT_ID_IOS', defaultValue: '');
+      case 'CASHFREE_APP_ID':
+        return const String.fromEnvironment('CASHFREE_APP_ID', defaultValue: '');
+      case 'CASHFREE_SECRET_KEY':
+        return const String.fromEnvironment('CASHFREE_SECRET_KEY', defaultValue: '');
+      case 'CASHFREE_MODE':
+        return const String.fromEnvironment('CASHFREE_MODE', defaultValue: '');
+      case 'CLERK_PUBLISHABLE_KEY':
+        return const String.fromEnvironment('CLERK_PUBLISHABLE_KEY', defaultValue: '');
+      case 'CLERK_SECRET_KEY':
+        return const String.fromEnvironment('CLERK_SECRET_KEY', defaultValue: '');
+      case 'PERPLEXITY_API_KEY':
+        return const String.fromEnvironment('PERPLEXITY_API_KEY', defaultValue: '');
+      default:
+        return '';
+    }
+  }
+
   // Initialize from environment or defaults
   static Future<void> initialize() async {
     if (_initialized) return;
@@ -41,19 +92,48 @@ class EnvConfig {
       debugPrint('⚠️  .env file not found (using defaults or compile-time env vars): $e');
     }
 
-    // Load from .env file first, then fallback to defaults
-    // Note: Compile-time environment variables (--dart-define) can only be used
-    // with const constructors and specific keys, so we rely on .env file for runtime config
+    // Load from .env file first, then fallback to compile-time env vars, then defaults
+    // For production: Use --dart-define flags (converted from Render env vars by build script)
+    // For local dev: Use .env file
     String getEnv(String key, {String defaultValue = ''}) {
-      return dotenv.get(key, fallback: defaultValue);
+      // First try .env file (local development)
+      final envValue = dotenv.get(key, fallback: '');
+      if (envValue.isNotEmpty) {
+        return envValue;
+      }
+      // Then try compile-time environment variable (production)
+      // Note: This requires the variable to be passed via --dart-define during build
+      // The build script converts Render env vars to --dart-define flags
+      try {
+        // Use const constructor with known keys - this works at compile time
+        final compileTimeValue = _getCompileTimeEnv(key);
+        if (compileTimeValue.isNotEmpty) {
+          return compileTimeValue;
+        }
+      } catch (e) {
+        // Ignore - compile-time vars may not be available
+      }
+      // Fallback to default
+      return defaultValue;
     }
     
     bool getBoolEnv(String key, {bool defaultValue = false}) {
+      // First try .env file
       final envValue = dotenv.get(key, fallback: '');
-      if (envValue.isEmpty) {
-        return defaultValue;
+      if (envValue.isNotEmpty) {
+        return envValue.toLowerCase() == 'true' || envValue == '1';
       }
-      return envValue.toLowerCase() == 'true' || envValue == '1';
+      // Then try compile-time variable
+      try {
+        final compileTimeValue = _getCompileTimeEnv(key);
+        if (compileTimeValue.isNotEmpty) {
+          return compileTimeValue.toLowerCase() == 'true' || compileTimeValue == '1';
+        }
+      } catch (e) {
+        // Ignore
+      }
+      // Fallback to default
+      return defaultValue;
     }
 
     // In production, these would come from environment variables

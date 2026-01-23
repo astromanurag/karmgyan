@@ -118,7 +118,8 @@ flutter:
     - assets/images/icons/
     - assets/images/decorations/
     - assets/locations/india_locations_optimized.json
-    - .env
+    # Note: .env is NOT included as an asset - it's only for local development
+    # The app will use compile-time environment variables or defaults in production
   
   # Fonts are optional - using system fonts if Poppins not available
   # fonts:

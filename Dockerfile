@@ -52,8 +52,14 @@ RUN flutter pub get
 # Copy application code
 COPY --chown=flutteruser:flutteruser . .
 
-# Build Flutter web app
-RUN flutter build web --release --web-renderer canvaskit
+# Copy and make build script executable
+COPY --chown=flutteruser:flutteruser scripts/build_web.sh /app/scripts/build_web.sh
+RUN chmod +x /app/scripts/build_web.sh
+
+# Build Flutter web app using build script
+# The script will convert environment variables to --dart-define flags
+# Environment variables should be set in Render's dashboard
+RUN /app/scripts/build_web.sh
 
 # Use nginx to serve the built web app
 FROM nginx:alpine

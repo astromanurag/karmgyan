@@ -8,11 +8,16 @@ import 'core/router/app_router.dart';
 import 'core/services/local_storage_service.dart';
 import 'core/services/notification_service.dart';
 import 'core/providers/auth_provider.dart';
+import 'core/utils/app_logger.dart';
 import 'services/supabase_service.dart';
 import 'services/enhanced_payment_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize logger first
+  await AppLogger.initialize(enableFileLogging: true);
+  AppLogger.i('🚀 App starting...');
   
   // Initialize environment configuration
   await EnvConfig.initialize();

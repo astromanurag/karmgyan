@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../config/app_config.dart';
 import '../config/env_config.dart';
+import '../core/utils/app_logger.dart';
 
 class PanchangService {
   static final PanchangService _instance = PanchangService._internal();
@@ -68,7 +69,7 @@ class PanchangService {
     // Calculate approximate values based on date
     final dayOfYear = date.difference(DateTime(date.year, 1, 1)).inDays;
     
-    print('🔢 Mock calculation for ${date.toIso8601String().split('T')[0]}: dayOfYear=$dayOfYear, day=${date.day}, month=${date.month}');
+    AppLogger.d('🔢 [PanchangService] Mock calculation for ${date.toIso8601String().split('T')[0]}: dayOfYear=$dayOfYear, day=${date.day}, month=${date.month}');
     
     // Create a unique day number that changes daily
     final uniqueDayNumber = (date.year * 366) + dayOfYear;
@@ -89,7 +90,7 @@ class PanchangService {
     // Karana (half of tithi)
     final karanaIndex = (lunarDay * 2) % 11;
     
-    print('🔢 Calculated indices: nakshatra=$nakshatraIndex (${_nakshatras[nakshatraIndex]}), tithi=$tithiIndex ($paksha ${_tithis[tithiIndex]}), yoga=$yogaIndex, karana=$karanaIndex');
+    AppLogger.d('🔢 [PanchangService] Calculated indices: nakshatra=$nakshatraIndex (${_nakshatras[nakshatraIndex]}), tithi=$tithiIndex ($paksha ${_tithis[tithiIndex]}), yoga=$yogaIndex, karana=$karanaIndex');
     
     // Calculate sunrise/sunset based on month (approximate for India)
     final month = date.month;
@@ -133,7 +134,11 @@ class PanchangService {
     };
     
     // Debug log to verify data is changing
-    print('📅 Generated panchang for $dateStr: Nakshatra=${result['nakshatra']}, Tithi=${result['tithi']}, Vara=${result['vara']}');
+    AppLogger.i('📅 [PanchangService] Generated panchang for $dateStr', null, null, {
+      'nakshatra': result['nakshatra'],
+      'tithi': result['tithi'],
+      'vara': result['vara'],
+    });
     
     return result;
   }
@@ -190,17 +195,21 @@ class PanchangService {
   }) async {
     final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
     
-    print('🔍 getDailyPanchang called for: $dateStr');
-    print('🔍 AppConfig.useMockData: ${AppConfig.useMockData}');
+    AppLogger.i('🔍 [PanchangService] getDailyPanchang called for: $dateStr', null, null, {
+      'useMockData': AppConfig.useMockData,
+      'latitude': latitude,
+      'longitude': longitude,
+      'timezone': timezone,
+    });
     
     try {
       // Use mock data if configured
       if (AppConfig.useMockData) {
-        print('⚠️ Using mock data (configured)');
+        AppLogger.i('⚠️ [PanchangService] Using mock data (configured)');
         return _getMockPanchang(date);
       }
 
-      print('🌐 Attempting to fetch from backend: ${EnvConfig.backendUrl}/api/panchang/daily');
+      AppLogger.i('🌐 [PanchangService] Attempting to fetch from backend: ${EnvConfig.backendUrl}/api/panchang/daily');
 
       final response = await _dio.get(
         '/api/panchang/daily',
@@ -213,21 +222,40 @@ class PanchangService {
         },
       );
 
-      print('✅ Backend response status: ${response.statusCode}');
+      AppLogger.logResponse(
+        method: 'GET',
+        url: '${EnvConfig.backendUrl}/api/panchang/daily',
+        statusCode: response.statusCode ?? 0,
+        body: response.data,
+      );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
-        print('✅ Backend data received: Nakshatra=${response.data['nakshatra']}');
+        AppLogger.i('✅ [PanchangService] Backend data received', null, null, {
+          'nakshatra': response.data['nakshatra'],
+        });
         return response.data;
       } else {
-        throw Exception(response.data['error'] ?? 'Failed to get panchang');
+        final error = response.data['error'] ?? 'Failed to get panchang';
+        AppLogger.e('❌ [PanchangService] Backend error', null, null, {'error': error});
+        throw Exception(error);
       }
-    } on DioException catch (e) {
+    } on DioException catch (e, stackTrace) {
       // Fallback to mock data on network error
-      print('❌ Network error (${e.type}), using mock data: ${e.message}');
+      AppLogger.logApiError(
+        method: 'GET',
+        url: '${EnvConfig.backendUrl}/api/panchang/daily',
+        error: e,
+        stackTrace: stackTrace,
+        statusCode: e.response?.statusCode,
+        responseBody: e.response?.data,
+      );
+      AppLogger.w('🔄 [PanchangService] Network error, using mock data', e, stackTrace, {
+        'errorType': e.type.toString(),
+      });
       return _getMockPanchang(date);
     } catch (e) {
       // Fallback to mock data on any error
-      print('❌ Error getting panchang, using mock data: $e');
+      AppLogger.e('❌ [PanchangService] Error getting panchang, using mock data', e, null);
       return _getMockPanchang(date);
     }
   }

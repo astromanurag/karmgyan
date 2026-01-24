@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import '../config/app_config.dart';
+import '../core/utils/app_logger.dart';
 
 class MatchingService {
   static final MatchingService _instance = MatchingService._internal();
@@ -23,10 +24,22 @@ class MatchingService {
   }) async {
     try {
       if (AppConfig.useMockData) {
+        AppLogger.i('📊 [MatchingService] Using mock data for compatibility');
         await Future.delayed(const Duration(seconds: 2));
         return _getMockCompatibility();
       }
 
+      AppLogger.i('💑 [MatchingService] Computing compatibility');
+      AppLogger.logRequest(
+        method: 'POST',
+        url: '${AppConfig.backendUrl}/api/matching/compatibility',
+        body: {
+          'person1': person1,
+          'person2': person2,
+        },
+      );
+
+      final stopwatch = Stopwatch()..start();
       final response = await _dio.post(
         '/api/matching/compatibility',
         data: {
@@ -34,15 +47,39 @@ class MatchingService {
           'person2': person2,
         },
       );
+      stopwatch.stop();
+
+      AppLogger.logResponse(
+        method: 'POST',
+        url: '${AppConfig.backendUrl}/api/matching/compatibility',
+        statusCode: response.statusCode ?? 0,
+        body: response.data,
+        duration: stopwatch.elapsed,
+      );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
+        AppLogger.i('✅ [MatchingService] Compatibility computed successfully', null, null, {
+          'totalPoints': response.data['guna_milan']?['total_points'],
+          'percentage': response.data['guna_milan']?['percentage'],
+        });
         return response.data;
       } else {
-        throw Exception(response.data['error'] ?? 'Failed to compute compatibility');
+        final error = response.data['error'] ?? 'Failed to compute compatibility';
+        AppLogger.e('❌ [MatchingService] Compatibility computation failed', null, null, {'error': error});
+        throw Exception(error);
       }
-    } on DioException catch (e) {
+    } on DioException catch (e, stackTrace) {
+      AppLogger.logApiError(
+        method: 'POST',
+        url: '${AppConfig.backendUrl}/api/matching/compatibility',
+        error: e,
+        stackTrace: stackTrace,
+        statusCode: e.response?.statusCode,
+        responseBody: e.response?.data,
+      );
       throw Exception('Network error: ${e.message}');
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.e('❌ [MatchingService] Error computing compatibility', e, stackTrace);
       throw Exception('Error computing compatibility: $e');
     }
   }

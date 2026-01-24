@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/app_config.dart';
 import '../core/services/local_storage_service.dart';
+import '../core/utils/app_logger.dart';
 
 class SupabaseService {
   static SupabaseClient? _client;
@@ -19,7 +20,7 @@ class SupabaseService {
       _initialized = true;
     } catch (e) {
       // If initialization fails, continue with mock data
-      print('Supabase initialization failed: $e');
+      AppLogger.e('❌ [SupabaseService] Initialization failed', e, null);
     }
   }
 
@@ -73,7 +74,10 @@ class SupabaseService {
 
         return data;
       } catch (e) {
-        print('Supabase query error: $e');
+        AppLogger.e('❌ [SupabaseService] Query error', e, null, {
+          'table': table,
+          'filters': filters.toString(),
+        });
         // Fall back to cache or mock data
       }
     }
@@ -101,7 +105,9 @@ class SupabaseService {
         await client!.from(table).insert(data);
         return;
       } catch (e) {
-        print('Supabase insert error: $e');
+        AppLogger.e('❌ [SupabaseService] Insert error', e, null, {
+          'table': table,
+        });
         // Queue for later if offline
       }
     }
@@ -130,7 +136,10 @@ class SupabaseService {
         await client!.from(table).update(data).eq('id', id);
         return;
       } catch (e) {
-        print('Supabase update error: $e');
+        AppLogger.e('❌ [SupabaseService] Update error', e, null, {
+          'table': table,
+          'id': id,
+        });
       }
     }
 
@@ -165,7 +174,7 @@ class SupabaseService {
           await client!.from(item['table']).insert(item['data']);
         }
       } catch (e) {
-        print('Failed to sync item: $e');
+        AppLogger.e('❌ [SupabaseService] Failed to sync item', e, null);
         failed.add(item);
       }
     }

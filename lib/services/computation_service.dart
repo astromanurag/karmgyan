@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import '../config/app_config.dart';
+import '../core/utils/app_logger.dart';
 
 class ComputationService {
   static final ComputationService _instance = ComputationService._internal();
@@ -76,7 +77,7 @@ class ComputationService {
   }) async {
     // Use mock data if backend is not available or in mock mode
     if (AppConfig.useMockData) {
-      print('[ComputationService] Using MOCK data mode');
+      AppLogger.i('📊 [ComputationService] Using MOCK data mode');
       await Future.delayed(const Duration(seconds: 1)); // Simulate API call
       final mockData = await _loadMockChartData();
       return {
@@ -89,12 +90,32 @@ class ComputationService {
       };
     }
     
-    print('[ComputationService] Using BACKEND at: ${AppConfig.backendUrl}');
+    AppLogger.i('🌐 [ComputationService] Using BACKEND at: ${AppConfig.backendUrl}', null, null, {
+      'name': name,
+      'date': date.toString(),
+      'latitude': latitude,
+      'longitude': longitude,
+      'timezone': timezone,
+    });
 
     try {
       final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
       final timeStr = '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}:00';
 
+      AppLogger.logRequest(
+        method: 'POST',
+        url: '${AppConfig.backendUrl}/api/computation/birth-chart',
+        body: {
+          'name': name,
+          'date': dateStr,
+          'time': timeStr,
+          'latitude': latitude,
+          'longitude': longitude,
+          'timezone': timezone,
+        },
+      );
+
+      final stopwatch = Stopwatch()..start();
       final response = await _dio.post(
         '/api/computation/birth-chart',
         data: {
@@ -106,15 +127,46 @@ class ComputationService {
           'timezone': timezone,
         },
       );
+      stopwatch.stop();
+
+      AppLogger.logResponse(
+        method: 'POST',
+        url: '${AppConfig.backendUrl}/api/computation/birth-chart',
+        statusCode: response.statusCode ?? 0,
+        body: response.data,
+        duration: stopwatch.elapsed,
+      );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
+        AppLogger.i('✅ [ComputationService] Chart generated successfully', null, null, {
+          'hasPlanets': response.data.containsKey('planets'),
+          if (response.data.containsKey('planets')) 'planets': response.data['planets'].keys.toList(),
+        });
         return response.data;
       } else {
-        throw Exception(response.data['error'] ?? 'Failed to generate birth chart');
+        final errorMsg = response.data['error'] ?? 'Failed to generate birth chart';
+        AppLogger.e('❌ [ComputationService] Backend returned error: $errorMsg', null, null, {
+          'response': response.data,
+        });
+        throw Exception(errorMsg);
       }
-    } on DioException catch (e) {
-      // Fallback to mock data on network error
-      print('Network error, using mock data: ${e.message}');
+    } on DioException catch (e, stackTrace) {
+      // Enhanced error logging for network errors
+      AppLogger.logApiError(
+        method: 'POST',
+        url: '${AppConfig.backendUrl}/api/computation/birth-chart',
+        error: e,
+        stackTrace: stackTrace,
+        statusCode: e.response?.statusCode,
+        responseBody: e.response?.data,
+      );
+      
+      AppLogger.w('🔄 [ComputationService] Falling back to mock data due to network error', e, stackTrace, {
+        'errorType': e.type.toString(),
+        'requestPath': e.requestOptions.path,
+        'baseUrl': e.requestOptions.baseUrl,
+      });
+      
       final mockData = await _loadMockChartData();
       return {
         ...mockData,
@@ -123,10 +175,18 @@ class ComputationService {
         'time': '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}:00',
         'latitude': latitude,
         'longitude': longitude,
+        '_fallback_reason': 'network_error',
+        '_error_details': e.message,
       };
-    } catch (e) {
-      // Fallback to mock data on any error
-      print('Error generating birth chart, using mock data: $e');
+    } catch (e, stackTrace) {
+      // Enhanced error logging for all other errors
+      AppLogger.e('❌ [ComputationService] UNEXPECTED ERROR', e, stackTrace, {
+        'errorType': e.runtimeType.toString(),
+        'operation': 'generateBirthChart',
+      });
+      
+      AppLogger.w('🔄 [ComputationService] Falling back to mock data due to error', e, stackTrace);
+      
       final mockData = await _loadMockChartData();
       return {
         ...mockData,
@@ -135,6 +195,8 @@ class ComputationService {
         'time': '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}:00',
         'latitude': latitude,
         'longitude': longitude,
+        '_fallback_reason': 'unexpected_error',
+        '_error_details': e.toString(),
       };
     }
   }

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../config/env_config.dart';
+import '../core/utils/app_logger.dart';
 
 /// Service for AI-powered astrological predictions
 class AIService {
@@ -34,7 +35,9 @@ class AIService {
     String? conversationId,
   }) async {
     try {
-      debugPrint('🤖 Asking AI: ${question.substring(0, question.length.clamp(0, 50))}...');
+      AppLogger.i('🤖 [AIService] Asking AI', null, null, {
+        'questionPreview': question.substring(0, question.length.clamp(0, 50)),
+      });
       
       final response = await _dio.post(
         '/api/ai/ask',
@@ -47,7 +50,7 @@ class AIService {
       );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
-        debugPrint('✅ AI response received');
+        AppLogger.i('✅ [AIService] AI response received');
         return AIResponse.fromJson(response.data);
       } else if (response.statusCode == 402) {
         return AIResponse(
@@ -60,13 +63,13 @@ class AIService {
         throw Exception(response.data['error'] ?? 'Failed to get AI response');
       }
     } on DioException catch (e) {
-      debugPrint('❌ AI request error: ${e.message}');
+      AppLogger.e('❌ [AIService] AI request error', e, null);
       return AIResponse(
         success: false,
         error: _getErrorMessage(e),
       );
     } catch (e) {
-      debugPrint('❌ AI error: $e');
+      AppLogger.e('❌ [AIService] AI error', e, null);
       return AIResponse(
         success: false,
         error: e.toString(),
@@ -80,7 +83,7 @@ class AIService {
     required ReportType reportType,
   }) async {
     try {
-      debugPrint('🤖 Generating ${reportType.name} report...');
+      AppLogger.i('🤖 [AIService] Generating ${reportType.name} report...');
       
       final response = await _dio.post(
         '/api/ai/generate-report',
@@ -92,7 +95,7 @@ class AIService {
       );
 
       if (response.statusCode == 200 && response.data['success'] == true) {
-        debugPrint('✅ Report generated');
+        AppLogger.i('✅ [AIService] Report generated');
         return AIReportResponse.fromJson(response.data);
       } else if (response.statusCode == 402) {
         return AIReportResponse(
@@ -105,13 +108,13 @@ class AIService {
         throw Exception(response.data['error'] ?? 'Failed to generate report');
       }
     } on DioException catch (e) {
-      debugPrint('❌ Report generation error: ${e.message}');
+      AppLogger.e('❌ [AIService] Report generation error', e, null);
       return AIReportResponse(
         success: false,
         error: _getErrorMessage(e),
       );
     } catch (e) {
-      debugPrint('❌ Report error: $e');
+      AppLogger.e('❌ [AIService] Report error', e, null);
       return AIReportResponse(
         success: false,
         error: e.toString(),
@@ -129,7 +132,7 @@ class AIService {
       }
       throw Exception('Failed to get credits');
     } on DioException catch (e) {
-      debugPrint('❌ Credits fetch error: ${e.message}');
+      AppLogger.e('❌ [AIService] Credits fetch error', e, null);
       // Return mock credits on error
       return CreditsInfo(credits: 10, pricing: {
         'question': 1,

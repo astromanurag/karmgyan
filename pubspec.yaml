@@ -92,6 +92,9 @@ dependencies:
   package_info_plus: ^9.0.0
   device_info_plus: ^10.1.1
   
+  # Logging
+  logger: ^2.0.2+1
+  
   # Internationalization
   flutter_localizations:
     sdk: flutter

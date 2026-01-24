@@ -18,6 +18,9 @@ router.post('/birth-chart', async (req, res) => {
     }
 
     console.log(`[Birth Chart] Computing chart for ${name || 'Unknown'} at ${date} ${time}`);
+    console.log(`[Birth Chart] Location: lat=${latitude}, lon=${longitude}, tz=${timezone || 'Asia/Kolkata'}`);
+    console.log(`[Birth Chart] Python script path: ${PYTHON_SCRIPT_PATH}`);
+    console.log(`[Birth Chart] Python script directory: ${path.dirname(PYTHON_SCRIPT_PATH)}`);
 
     const options = {
       mode: 'text',
@@ -34,43 +37,85 @@ router.post('/birth-chart', async (req, res) => {
       timeout: TIMEOUT,
     };
 
+    console.log(`[Birth Chart] Python command: python3 ${options.scriptPath}/compute_chart.py ${options.args.join(' ')}`);
+
     return new Promise((resolve, reject) => {
       const shell = new PythonShell('compute_chart.py', options);
       let output = '';
+      let errorOutput = '';
 
       shell.on('message', (message) => {
+        console.log(`[Python Output] ${message}`);
         output += message + '\n';
       });
 
       shell.on('stderr', (stderr) => {
-        console.error('[Python Error]', stderr);
+        console.error('[Python Stderr]', stderr);
+        errorOutput += stderr + '\n';
       });
 
       shell.end((err) => {
         if (err) {
-          console.error('[Computation Error]', err);
+          console.error('[Computation Error] Full error object:', JSON.stringify(err, null, 2));
+          console.error('[Computation Error] Error message:', err.message);
+          console.error('[Computation Error] Error traceback:', err.traceback);
+          console.error('[Computation Error] Python stderr output:', errorOutput);
+          console.error('[Computation Error] Python stdout output:', output);
+          console.error('[Computation Error] Exit code:', err.exitCode);
+          
           if (!res.headersSent) {
             res.status(500).json({ 
               success: false, 
-              error: 'Failed to compute chart: ' + err.message 
+              error: 'Failed to compute chart: ' + err.message,
+              details: {
+                traceback: err.traceback,
+                stderr: errorOutput,
+                stdout: output,
+                exitCode: err.exitCode,
+              }
             });
           }
           reject(err);
           return;
         }
 
+        console.log(`[Birth Chart] Python script completed. Output length: ${output.length} chars`);
+        console.log(`[Birth Chart] Output preview: ${output.substring(0, 200)}...`);
+
         try {
           const result = JSON.parse(output.trim());
+          console.log(`[Birth Chart] ✅ Successfully parsed JSON result`);
+          console.log(`[Birth Chart] Result keys: ${Object.keys(result).join(', ')}`);
+          
+          if (result.error) {
+            console.error(`[Birth Chart] ❌ Python script returned error: ${result.error}`);
+            if (result.traceback) {
+              console.error(`[Birth Chart] Python traceback: ${result.traceback}`);
+            }
+          }
+          
           if (!res.headersSent) {
             res.json({ success: true, ...result });
           }
           resolve(result);
         } catch (parseError) {
-          console.error('[Parse Error]', parseError, 'Output:', output);
+          console.error('[Parse Error] Failed to parse JSON output');
+          console.error('[Parse Error] Parse error:', parseError);
+          console.error('[Parse Error] Output length:', output.length);
+          console.error('[Parse Error] Output (first 500 chars):', output.substring(0, 500));
+          console.error('[Parse Error] Output (last 500 chars):', output.substring(Math.max(0, output.length - 500)));
+          console.error('[Parse Error] Python stderr:', errorOutput);
+          
           if (!res.headersSent) {
             res.status(500).json({ 
               success: false, 
               error: 'Failed to parse computation result',
+              details: {
+                parseError: parseError.message,
+                outputLength: output.length,
+                outputPreview: output.substring(0, 500),
+                stderr: errorOutput,
+              },
               raw: output 
             });
           }

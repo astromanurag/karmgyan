@@ -4,6 +4,7 @@ import '../config/app_config.dart';
 import '../config/env_config.dart';
 import '../core/models/user_model.dart';
 import '../core/services/local_storage_service.dart';
+import '../core/utils/app_logger.dart';
 
 class AuthService {
   static String get _baseUrl => AppConfig.backendUrl;
@@ -57,12 +58,13 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    print('🔐 signInWithEmail called');
-    print('🔐 Email: $email');
-    print('🔐 EnvConfig.useMockAuth: ${EnvConfig.useMockAuth}');
+    AppLogger.i('🔐 [AuthService] signInWithEmail called', null, null, {
+      'email': email,
+      'useMockAuth': EnvConfig.useMockAuth,
+    });
     
     if (EnvConfig.useMockAuth) {
-      print('✅ Using MOCK AUTH - Login will succeed');
+      AppLogger.i('✅ [AuthService] Using MOCK AUTH - Login will succeed');
       await Future.delayed(const Duration(seconds: 1));
       final user = UserModel(
         id: 'user_${DateTime.now().millisecondsSinceEpoch}',
@@ -74,7 +76,10 @@ class AuthService {
         createdAt: DateTime.now(),
       );
       await _saveUser(user);
-      print('✅ Mock user created and saved: ${user.email}');
+      AppLogger.i('✅ [AuthService] Mock user created and saved', null, null, {
+        'userId': user.id,
+        'email': user.email,
+      });
       return user;
     }
 

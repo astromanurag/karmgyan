@@ -236,6 +236,9 @@ class _BirthChartScreenState extends ConsumerState<BirthChartScreen> {
         _selectedTime!.minute,
       );
 
+      print('[BirthChartScreen] Starting chart generation...');
+      print('[BirthChartScreen] Parameters: name=${_nameController.text}, date=$dateTime, lat=$lat, lon=$lon');
+
       // Generate birth chart
       final chartResult = await ComputationService().generateBirthChart(
         name: _nameController.text,
@@ -244,12 +247,40 @@ class _BirthChartScreenState extends ConsumerState<BirthChartScreen> {
         longitude: lon,
       );
 
+      // Check if fallback was used
+      if (chartResult.containsKey('_fallback_reason')) {
+        final reason = chartResult['_fallback_reason'];
+        final errorDetails = chartResult['_error_details'];
+        print('[BirthChartScreen] ⚠️  WARNING: Chart generation used fallback data');
+        print('[BirthChartScreen] Fallback reason: $reason');
+        print('[BirthChartScreen] Error details: $errorDetails');
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('⚠️ Using sample data. Backend unavailable: $reason'),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+      } else {
+        print('[BirthChartScreen] ✅ Chart generated successfully from backend');
+      }
+
       // Generate dasha data
+      print('[BirthChartScreen] Generating dasha data...');
       final dashaResult = await ComputationService().generateDasha(
         date: dateTime,
         latitude: lat,
         longitude: lon,
       );
+
+      print('[BirthChartScreen] Chart result keys: ${chartResult.keys.toList()}');
+      print('[BirthChartScreen] Chart has planets: ${chartResult.containsKey('planets')}');
+      if (chartResult.containsKey('planets')) {
+        print('[BirthChartScreen] Planets: ${chartResult['planets'].keys.toList()}');
+      }
 
       setState(() {
         _chartData = chartResult;

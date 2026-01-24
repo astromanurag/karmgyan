@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import '../config/app_config.dart';
+import '../core/utils/app_logger.dart';
 
 class NumerologyService {
   static final NumerologyService _instance = NumerologyService._internal();
@@ -27,8 +28,23 @@ class NumerologyService {
     String system = 'pythagorean',
   }) async {
     try {
-      print('🔢 Analyzing name: $name');
+      AppLogger.i('🔢 [NumerologyService] Analyzing name: $name', null, null, {
+        'name': name,
+        'birthDate': birthDate,
+        'system': system,
+      });
       
+      AppLogger.logRequest(
+        method: 'POST',
+        url: '${AppConfig.backendUrl}/api/numerology/analyze',
+        body: {
+          'name': name,
+          if (birthDate != null) 'birthDate': birthDate,
+          'system': system,
+        },
+      );
+
+      final stopwatch = Stopwatch()..start();
       final response = await _dio.post(
         '/api/numerology/analyze',
         data: {
@@ -37,19 +53,38 @@ class NumerologyService {
           'system': system,
         },
       );
+      stopwatch.stop();
 
-      print('✅ Name analysis completed: ${response.data['destiny_number']?['number']}');
+      AppLogger.logResponse(
+        method: 'POST',
+        url: '${AppConfig.backendUrl}/api/numerology/analyze',
+        statusCode: response.statusCode ?? 0,
+        body: response.data,
+        duration: stopwatch.elapsed,
+      );
       
       if (response.statusCode == 200 && response.data['success'] == true) {
+        AppLogger.i('✅ [NumerologyService] Name analysis completed', null, null, {
+          'destinyNumber': response.data['destiny_number']?['number'],
+        });
         return response.data;
       } else {
-        throw Exception(response.data['error'] ?? 'Failed to analyze name');
+        final error = response.data['error'] ?? 'Failed to analyze name';
+        AppLogger.e('❌ [NumerologyService] Analysis failed', null, null, {'error': error});
+        throw Exception(error);
       }
-    } on DioException catch (e) {
-      print('❌ Network error: ${e.message}');
+    } on DioException catch (e, stackTrace) {
+      AppLogger.logApiError(
+        method: 'POST',
+        url: '${AppConfig.backendUrl}/api/numerology/analyze',
+        error: e,
+        stackTrace: stackTrace,
+        statusCode: e.response?.statusCode,
+        responseBody: e.response?.data,
+      );
       throw Exception('Network error: ${e.message}');
-    } catch (e) {
-      print('❌ Error analyzing name: $e');
+    } catch (e, stackTrace) {
+      AppLogger.e('❌ [NumerologyService] Error analyzing name', e, stackTrace);
       throw Exception('Error analyzing name: $e');
     }
   }
@@ -61,8 +96,19 @@ class NumerologyService {
     String system = 'pythagorean',
   }) async {
     try {
-      print('🔢 Checking compatibility: $number1 & $number2');
+      AppLogger.i('🔢 [NumerologyService] Checking compatibility: $number1 & $number2');
       
+      AppLogger.logRequest(
+        method: 'GET',
+        url: '${AppConfig.backendUrl}/api/numerology/compatibility',
+        queryParams: {
+          'number1': number1.toString(),
+          'number2': number2.toString(),
+          'system': system,
+        },
+      );
+
+      final stopwatch = Stopwatch()..start();
       final response = await _dio.get(
         '/api/numerology/compatibility',
         queryParameters: {
@@ -71,19 +117,38 @@ class NumerologyService {
           'system': system,
         },
       );
+      stopwatch.stop();
 
-      print('✅ Compatibility: ${response.data['compatibility']}');
+      AppLogger.logResponse(
+        method: 'GET',
+        url: '${AppConfig.backendUrl}/api/numerology/compatibility',
+        statusCode: response.statusCode ?? 0,
+        body: response.data,
+        duration: stopwatch.elapsed,
+      );
       
       if (response.statusCode == 200 && response.data['success'] == true) {
+        AppLogger.i('✅ [NumerologyService] Compatibility checked', null, null, {
+          'compatibility': response.data['compatibility'],
+        });
         return response.data;
       } else {
-        throw Exception(response.data['error'] ?? 'Failed to check compatibility');
+        final error = response.data['error'] ?? 'Failed to check compatibility';
+        AppLogger.e('❌ [NumerologyService] Compatibility check failed', null, null, {'error': error});
+        throw Exception(error);
       }
-    } on DioException catch (e) {
-      print('❌ Network error: ${e.message}');
+    } on DioException catch (e, stackTrace) {
+      AppLogger.logApiError(
+        method: 'GET',
+        url: '${AppConfig.backendUrl}/api/numerology/compatibility',
+        error: e,
+        stackTrace: stackTrace,
+        statusCode: e.response?.statusCode,
+        responseBody: e.response?.data,
+      );
       throw Exception('Network error: ${e.message}');
-    } catch (e) {
-      print('❌ Error checking compatibility: $e');
+    } catch (e, stackTrace) {
+      AppLogger.e('❌ [NumerologyService] Error checking compatibility', e, stackTrace);
       throw Exception('Error checking compatibility: $e');
     }
   }
@@ -95,8 +160,19 @@ class NumerologyService {
     String system = 'pythagorean',
   }) async {
     try {
-      print('🔢 Suggesting names for: $name, target: $targetNumber');
+      AppLogger.i('🔢 [NumerologyService] Suggesting names for: $name, target: $targetNumber');
       
+      AppLogger.logRequest(
+        method: 'POST',
+        url: '${AppConfig.backendUrl}/api/numerology/suggest-names',
+        body: {
+          'name': name,
+          'targetNumber': targetNumber,
+          'system': system,
+        },
+      );
+
+      final stopwatch = Stopwatch()..start();
       final response = await _dio.post(
         '/api/numerology/suggest-names',
         data: {
@@ -105,8 +181,19 @@ class NumerologyService {
           'system': system,
         },
       );
+      stopwatch.stop();
 
-      print('✅ Suggestions generated: ${response.data['suggestions']?.length ?? 0}');
+      AppLogger.logResponse(
+        method: 'POST',
+        url: '${AppConfig.backendUrl}/api/numerology/suggest-names',
+        statusCode: response.statusCode ?? 0,
+        body: response.data,
+        duration: stopwatch.elapsed,
+      );
+
+      AppLogger.i('✅ [NumerologyService] Suggestions generated', null, null, {
+        'count': response.data['suggestions']?.length ?? 0,
+      });
       
       if (response.statusCode == 200 && response.data['success'] == true) {
         return response.data;
@@ -114,10 +201,17 @@ class NumerologyService {
         throw Exception(response.data['error'] ?? 'Failed to suggest names');
       }
     } on DioException catch (e) {
-      print('❌ Network error: ${e.message}');
+      AppLogger.logApiError(
+        method: 'POST',
+        url: '${AppConfig.backendUrl}/api/numerology/suggest-names',
+        error: e,
+        stackTrace: null,
+        statusCode: e.response?.statusCode,
+        responseBody: e.response?.data,
+      );
       throw Exception('Network error: ${e.message}');
-    } catch (e) {
-      print('❌ Error suggesting names: $e');
+    } catch (e, stackTrace) {
+      AppLogger.e('❌ [NumerologyService] Error suggesting names', e, stackTrace);
       throw Exception('Error suggesting names: $e');
     }
   }
@@ -128,8 +222,15 @@ class NumerologyService {
     String system = 'pythagorean',
   }) async {
     try {
-      print('🔢 Calculating number for name: $name');
+      AppLogger.i('🔢 [NumerologyService] Calculating number for name: $name');
       
+      AppLogger.logRequest(
+        method: 'POST',
+        url: '${AppConfig.backendUrl}/api/numerology/calculate-name-number',
+        body: {'name': name, 'system': system},
+      );
+
+      final stopwatch = Stopwatch()..start();
       final response = await _dio.post(
         '/api/numerology/calculate-name-number',
         data: {
@@ -137,8 +238,19 @@ class NumerologyService {
           'system': system,
         },
       );
+      stopwatch.stop();
 
-      print('✅ Name number calculated: ${response.data['number']}');
+      AppLogger.logResponse(
+        method: 'POST',
+        url: '${AppConfig.backendUrl}/api/numerology/calculate-name-number',
+        statusCode: response.statusCode ?? 0,
+        body: response.data,
+        duration: stopwatch.elapsed,
+      );
+
+      AppLogger.i('✅ [NumerologyService] Name number calculated', null, null, {
+        'number': response.data['number'],
+      });
       
       if (response.statusCode == 200 && response.data['success'] == true) {
         return response.data;
@@ -160,16 +272,32 @@ class NumerologyService {
   }) async {
     try {
       final dateStr = '${birthDate.year}-${birthDate.month.toString().padLeft(2, '0')}-${birthDate.day.toString().padLeft(2, '0')}';
-      print('🔢 Calculating Loshu grid for date: $dateStr');
+      AppLogger.i('🔢 [NumerologyService] Calculating Loshu grid for date: $dateStr');
       
+      AppLogger.logRequest(
+        method: 'POST',
+        url: '${AppConfig.backendUrl}/api/numerology/loshu-grid',
+        body: {'birthDate': dateStr},
+      );
+
+      final stopwatch = Stopwatch()..start();
       final response = await _dio.post(
         '/api/numerology/loshu-grid',
         data: {
           'birthDate': dateStr,
         },
       );
+      stopwatch.stop();
 
-      print('✅ Loshu grid calculated');
+      AppLogger.logResponse(
+        method: 'POST',
+        url: '${AppConfig.backendUrl}/api/numerology/loshu-grid',
+        statusCode: response.statusCode ?? 0,
+        body: response.data,
+        duration: stopwatch.elapsed,
+      );
+
+      AppLogger.i('✅ [NumerologyService] Loshu grid calculated');
       
       if (response.statusCode == 200 && response.data['success'] == true) {
         return response.data;
@@ -196,8 +324,27 @@ class NumerologyService {
     List<String>? excludeNames,
   }) async {
     try {
-      print('🔢 Suggesting names for number: $targetNumber');
+      AppLogger.i('🔢 [NumerologyService] Suggesting names for number: $targetNumber', null, null, {
+        'targetNumber': targetNumber,
+        'system': system,
+        'language': language,
+      });
       
+      AppLogger.logRequest(
+        method: 'POST',
+        url: '${AppConfig.backendUrl}/api/numerology/suggest-names-by-number',
+        body: {
+          'targetNumber': targetNumber,
+          'system': system,
+          if (nameLength != null) 'nameLength': nameLength,
+          'language': language,
+          if (religion != null) 'religion': religion,
+          if (gender != null) 'gender': gender,
+          if (excludeNames != null && excludeNames.isNotEmpty) 'excludeNames': excludeNames,
+        },
+      );
+
+      final stopwatch = Stopwatch()..start();
       final response = await _dio.post(
         '/api/numerology/suggest-names-by-number',
         data: {
@@ -210,9 +357,19 @@ class NumerologyService {
           if (excludeNames != null && excludeNames.isNotEmpty) 'excludeNames': excludeNames,
         },
       );
+      stopwatch.stop();
 
-      print('✅ Names suggested: ${response.data['suggestions']?.length ?? 0}');
-      print('Response data: ${response.data}');
+      AppLogger.logResponse(
+        method: 'POST',
+        url: '${AppConfig.backendUrl}/api/numerology/suggest-names-by-number',
+        statusCode: response.statusCode ?? 0,
+        body: response.data,
+        duration: stopwatch.elapsed,
+      );
+
+      AppLogger.i('✅ [NumerologyService] Names suggested', null, null, {
+        'count': response.data['suggestions']?.length ?? 0,
+      });
       
       if (response.statusCode == 200) {
         // Handle both success: true and direct result formats
@@ -225,10 +382,17 @@ class NumerologyService {
         throw Exception(response.data['error'] ?? 'Failed to suggest names');
       }
     } on DioException catch (e) {
-      print('❌ Network error: ${e.message}');
+      AppLogger.logApiError(
+        method: 'POST',
+        url: '${AppConfig.backendUrl}/api/numerology/suggest-names',
+        error: e,
+        stackTrace: null,
+        statusCode: e.response?.statusCode,
+        responseBody: e.response?.data,
+      );
       throw Exception('Network error: ${e.message}');
-    } catch (e) {
-      print('❌ Error suggesting names: $e');
+    } catch (e, stackTrace) {
+      AppLogger.e('❌ [NumerologyService] Error suggesting names', e, stackTrace);
       throw Exception('Error suggesting names: $e');
     }
   }

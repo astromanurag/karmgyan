@@ -1,8 +1,56 @@
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'dart:async';
+import 'app_logger.dart';
 
 class ErrorHandler {
+  // Error categories for better logging
+  enum ErrorCategory {
+    network,
+    authentication,
+    validation,
+    server,
+    unknown,
+  }
+
+  // Get error category
+  static ErrorCategory _getErrorCategory(dynamic error) {
+    if (error == null) return ErrorCategory.unknown;
+
+    final errorString = error.toString().toLowerCase();
+
+    if (errorString.contains('network') || 
+        errorString.contains('connection') ||
+        errorString.contains('timeout') ||
+        errorString.contains('socket')) {
+      return ErrorCategory.network;
+    }
+
+    if (errorString.contains('unauthorized') || 
+        errorString.contains('authentication') ||
+        errorString.contains('invalid credentials')) {
+      return ErrorCategory.authentication;
+    }
+
+    if (errorString.contains('500') || 
+        errorString.contains('server error') ||
+        errorString.contains('internal error')) {
+      return ErrorCategory.server;
+    }
+
+    if (errorString.contains('404') || errorString.contains('not found')) {
+      return ErrorCategory.server;
+    }
+
+    if (errorString.contains('validation') || 
+        errorString.contains('invalid') ||
+        errorString.contains('required')) {
+      return ErrorCategory.validation;
+    }
+
+    return ErrorCategory.unknown;
+  }
+
   // Get user-friendly error message
   static String getErrorMessage(dynamic error) {
     if (error == null) return 'An unknown error occurred';
@@ -48,8 +96,27 @@ class ErrorHandler {
   }
 
   // Show error snackbar
-  static void showError(BuildContext context, dynamic error, {Duration? duration}) {
+  static void showError(BuildContext context, dynamic error, {
+    Duration? duration,
+    StackTrace? stackTrace,
+    Map<String, dynamic>? context,
+  }) {
     if (!context.mounted) return;
+
+    // Log error with full details
+    final category = _getErrorCategory(error);
+    final userMessage = getErrorMessage(error);
+    
+    AppLogger.e(
+      '❌ Error shown to user: $userMessage',
+      error,
+      stackTrace,
+      {
+        'category': category.name,
+        'userMessage': userMessage,
+        if (context != null) ...context,
+      },
+    );
 
     // Capture the messenger before showing snackbar to avoid context issues
     final messenger = ScaffoldMessenger.of(context);
@@ -62,7 +129,7 @@ class ErrorHandler {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                getErrorMessage(error),
+                userMessage,
                 style: const TextStyle(color: Colors.white),
               ),
             ),
@@ -85,6 +152,8 @@ class ErrorHandler {
   // Show success message
   static void showSuccess(BuildContext context, String message, {Duration? duration}) {
     if (!context.mounted) return;
+
+    AppLogger.i('✅ Success message shown: $message');
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -110,8 +179,11 @@ class ErrorHandler {
   static Future<bool> checkConnectivity() async {
     try {
       final connectivityResult = await Connectivity().checkConnectivity();
-      return connectivityResult != ConnectivityResult.none;
+      final hasConnection = connectivityResult != ConnectivityResult.none;
+      AppLogger.d('🌐 Connectivity check: ${connectivityResult.name} → $hasConnection');
+      return hasConnection;
     } catch (e) {
+      AppLogger.w('⚠️ Connectivity check failed', e);
       return false;
     }
   }

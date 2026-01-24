@@ -88,3 +88,19 @@ docs/_build/
 *.pem
 *.key
 *.cert
+
+# FVM Version Cache
+.fvm/
+
+# Android Keystore
+*.jks
+*.keystore
+android/key.properties
+android/app/keystore/
+
+# Logs directory
+logs/
+*.log
+
+# Documentation (keep .md files but ignore generated docs)
+docs/_build/

@@ -176,6 +176,51 @@ class EnvConfig {
     debugPrint('  - useMockData: $_useMockData');
     debugPrint('  - useMockAuth: $_useMockAuth');
     debugPrint('  - backendUrl: $_backendUrl');
+    
+    // Warn about missing production keys
+    _validateProductionKeys();
+  }
+  
+  /// Validate production keys and warn about missing ones
+  static void _validateProductionKeys() {
+    if (kDebugMode) {
+      // Only warn in debug mode to avoid spam in production
+      final missingKeys = <String>[];
+      
+      if (!hasSupabaseConfig) {
+        missingKeys.add('Supabase (URL, Publishable Key, Secret Key)');
+      }
+      if (!hasCashfreeConfig) {
+        missingKeys.add('Cashfree (App ID, Secret Key)');
+      }
+      if (!hasGoogleOAuthConfig) {
+        missingKeys.add('Google OAuth (Client IDs)');
+      }
+      if (!hasClerkConfig) {
+        missingKeys.add('Clerk (Publishable Key, Secret Key)');
+      }
+      if (!hasPerplexityConfig) {
+        missingKeys.add('Perplexity (API Key)');
+      }
+      if (!hasAgoraConfig) {
+        missingKeys.add('Agora (App ID, Certificate)');
+      }
+      
+      if (missingKeys.isNotEmpty && !_useMockData) {
+        debugPrint('⚠️  WARNING: Missing production API keys:');
+        for (final key in missingKeys) {
+          debugPrint('   - $key');
+        }
+        debugPrint('   The app may not function correctly without these keys.');
+        debugPrint('   See KEYS_SETUP_GUIDE.md for setup instructions.');
+      }
+      
+      // Warn if using mock mode with production keys
+      if (_useMockData && hasSupabaseConfig) {
+        debugPrint('⚠️  WARNING: Mock data mode is enabled but production keys are configured.');
+        debugPrint('   Consider setting USE_MOCK_DATA=false for production.');
+      }
+    }
   }
 
   // Getters - runtime override takes precedence

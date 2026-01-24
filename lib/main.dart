@@ -28,9 +28,16 @@ void main() async {
   EnvConfig.overrideMockData(false);  // false = real backend for astrology
   EnvConfig.overrideMockAuth(true);   // true = mock auth (test@test.com works)
   
-  debugPrint('🔧 App Mode: ${EnvConfig.useMockData ? "MOCK DATA" : "LIVE BACKEND"}');
-  debugPrint('🔐 Auth Mode: ${EnvConfig.useMockAuth ? "MOCK AUTH" : "LIVE AUTH"}');
-  debugPrint('🌐 Backend URL: ${EnvConfig.backendUrl}');
+  AppLogger.d('🔧 App Mode: ${EnvConfig.useMockData ? "MOCK DATA" : "LIVE BACKEND"}');
+  AppLogger.d('🔐 Auth Mode: ${EnvConfig.useMockAuth ? "MOCK AUTH" : "LIVE AUTH"}');
+  AppLogger.d('🌐 Backend URL: ${EnvConfig.backendUrl}');
+  if (EnvConfig.hasApiKey) {
+    final apiKey = EnvConfig.apiKey;
+    final keyType = apiKey.startsWith('demo') ? 'DEMO' : apiKey.startsWith('sk_') ? 'PRODUCTION' : 'CUSTOM';
+    AppLogger.d('🔑 API Key: ${apiKey.substring(0, apiKey.length > 20 ? 20 : apiKey.length)}... ($keyType)');
+  } else {
+    AppLogger.w('⚠️ API Key: NOT SET - API calls may fail');
+  }
   
   // Initialize Hive for local storage
   await Hive.initFlutter();

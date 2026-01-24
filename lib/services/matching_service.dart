@@ -14,6 +14,7 @@ class MatchingService {
       receiveTimeout: const Duration(seconds: 30),
       headers: {
         'Content-Type': 'application/json',
+        if (AppConfig.hasApiKey) 'X-API-Key': AppConfig.apiKey,
       },
     ),
   );
@@ -40,18 +41,31 @@ class MatchingService {
       );
 
       final stopwatch = Stopwatch()..start();
+      // Use new API endpoint: /compatibility
       final response = await _dio.post(
-        '/api/matching/compatibility',
+        '/compatibility',
         data: {
-          'person1': person1,
-          'person2': person2,
+          'person1': {
+            'date': person1['date'],
+            'time': person1['time'],
+            'latitude': person1['latitude'],
+            'longitude': person1['longitude'],
+            'timezone': person1['timezone'] ?? 'Asia/Kolkata',
+          },
+          'person2': {
+            'date': person2['date'],
+            'time': person2['time'],
+            'latitude': person2['latitude'],
+            'longitude': person2['longitude'],
+            'timezone': person2['timezone'] ?? 'Asia/Kolkata',
+          },
         },
       );
       stopwatch.stop();
 
       AppLogger.logResponse(
         method: 'POST',
-        url: '${AppConfig.backendUrl}/api/matching/compatibility',
+        url: '${AppConfig.backendUrl}/compatibility',
         statusCode: response.statusCode ?? 0,
         body: response.data,
         duration: stopwatch.elapsed,
@@ -71,7 +85,7 @@ class MatchingService {
     } on DioException catch (e, stackTrace) {
       AppLogger.logApiError(
         method: 'POST',
-        url: '${AppConfig.backendUrl}/api/matching/compatibility',
+        url: '${AppConfig.backendUrl}/compatibility',
         error: e,
         stackTrace: stackTrace,
         statusCode: e.response?.statusCode,

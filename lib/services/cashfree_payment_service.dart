@@ -28,9 +28,13 @@ class CashfreePaymentService {
 
     try {
       // Step 1: Create order on backend
+      final headers = <String, String>{
+        'Content-Type': 'application/json',
+        if (AppConfig.hasApiKey) 'X-API-Key': AppConfig.apiKey,
+      };
       final orderResponse = await http.post(
         Uri.parse('${EnvConfig.backendUrl}/api/payment/create-order'),
-        headers: {'Content-Type': 'application/json'},
+        headers: headers,
         body: jsonEncode({
           'amount': amount,
           'orderId': orderId,
@@ -84,8 +88,12 @@ class CashfreePaymentService {
     }
 
     try {
+      final headers = <String, String>{
+        if (AppConfig.hasApiKey) 'X-API-Key': AppConfig.apiKey,
+      };
       final response = await http.get(
         Uri.parse('${EnvConfig.backendUrl}/api/payment/status/$orderId'),
+        headers: headers,
       );
 
       if (response.statusCode == 200) {

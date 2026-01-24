@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class EnvConfig {
   static bool _initialized = false;
+  static bool _dotenvLoaded = false; // Track if .env was successfully loaded
   static late bool _useMockData;
   static late bool _useMockAuth; // Separate flag for authentication
   static late String _backendUrl;
@@ -24,6 +25,7 @@ class EnvConfig {
   static late String _clerkPublishableKey;
   static late String _clerkSecretKey;
   static late String _perplexityApiKey;
+  static late String _apiKey; // API key for karmgyan-api.onrender.com
   
   // Runtime override flags (allows changing without recompile)
   static bool? _runtimeMockOverride;
@@ -40,7 +42,8 @@ class EnvConfig {
       case 'USE_MOCK_AUTH':
         return const String.fromEnvironment('USE_MOCK_AUTH', defaultValue: '');
       case 'BACKEND_URL':
-        return const String.fromEnvironment('BACKEND_URL', defaultValue: '');
+        // Default to external API even for compile-time vars
+        return const String.fromEnvironment('BACKEND_URL', defaultValue: 'https://karmgyan-api.onrender.com');
       case 'SUPABASE_URL':
         return const String.fromEnvironment('SUPABASE_URL', defaultValue: '');
       case 'SUPABASE_PUBLISHABLE_KEY':
@@ -75,6 +78,8 @@ class EnvConfig {
         return const String.fromEnvironment('CLERK_SECRET_KEY', defaultValue: '');
       case 'PERPLEXITY_API_KEY':
         return const String.fromEnvironment('PERPLEXITY_API_KEY', defaultValue: '');
+      case 'API_KEY':
+        return const String.fromEnvironment('API_KEY', defaultValue: '');
       default:
         return '';
     }
@@ -87,19 +92,38 @@ class EnvConfig {
     // Try to load .env file (for local development)
     try {
       await dotenv.load(fileName: '.env');
+      _dotenvLoaded = true;
       debugPrint('✅ Loaded .env file');
     } catch (e) {
-      debugPrint('⚠️  .env file not found (using defaults or compile-time env vars): $e');
+      _dotenvLoaded = false;
+      debugPrint('⚠️  .env file not found (using defaults or compile-time env vars)');
     }
 
     // Load from .env file first, then fallback to compile-time env vars, then defaults
     // For production: Use --dart-define flags (converted from Render env vars by build script)
     // For local dev: Use .env file
     String getEnv(String key, {String defaultValue = ''}) {
-      // First try .env file (local development)
-      final envValue = dotenv.get(key, fallback: '');
-      if (envValue.isNotEmpty) {
-        return envValue;
+      // Special handling for BACKEND_URL - always default to external API unless explicitly set to external URL
+      if (key == 'BACKEND_URL' && defaultValue.isEmpty) {
+        defaultValue = 'https://karmgyan-api.onrender.com';
+      }
+      
+      // First try .env file (local development) - only if it was loaded
+      if (_dotenvLoaded) {
+        try {
+          final envValue = dotenv.get(key, fallback: '');
+          if (envValue.isNotEmpty) {
+            // For BACKEND_URL, ignore localhost values (force external API)
+            if (key == 'BACKEND_URL' && (envValue.contains('localhost') || envValue.contains('127.0.0.1'))) {
+              debugPrint('⚠️  Ignoring localhost BACKEND_URL from .env, using external API instead');
+              // Continue to use default (external API)
+            } else {
+              return envValue;
+            }
+          }
+        } catch (e) {
+          // dotenv not initialized, continue to fallback
+        }
       }
       // Then try compile-time environment variable (production)
       // Note: This requires the variable to be passed via --dart-define during build
@@ -108,20 +132,32 @@ class EnvConfig {
         // Use const constructor with known keys - this works at compile time
         final compileTimeValue = _getCompileTimeEnv(key);
         if (compileTimeValue.isNotEmpty) {
-          return compileTimeValue;
+          // For BACKEND_URL, ignore localhost values (force external API)
+          if (key == 'BACKEND_URL' && (compileTimeValue.contains('localhost') || compileTimeValue.contains('127.0.0.1'))) {
+            debugPrint('⚠️  Ignoring localhost BACKEND_URL from compile-time vars, using external API instead');
+            // Continue to use default (external API)
+          } else {
+            return compileTimeValue;
+          }
         }
       } catch (e) {
         // Ignore - compile-time vars may not be available
       }
-      // Fallback to default
+      // Fallback to default (which is now always external API for BACKEND_URL)
       return defaultValue;
     }
     
     bool getBoolEnv(String key, {bool defaultValue = false}) {
-      // First try .env file
-      final envValue = dotenv.get(key, fallback: '');
-      if (envValue.isNotEmpty) {
-        return envValue.toLowerCase() == 'true' || envValue == '1';
+      // First try .env file - only if it was loaded
+      if (_dotenvLoaded) {
+        try {
+          final envValue = dotenv.get(key, fallback: '');
+          if (envValue.isNotEmpty) {
+            return envValue.toLowerCase() == 'true' || envValue == '1';
+          }
+        } catch (e) {
+          // dotenv not initialized, continue to fallback
+        }
       }
       // Then try compile-time variable
       try {
@@ -142,7 +178,15 @@ class EnvConfig {
     // Set _runtimeMockOverride to override at runtime
     _useMockData = getBoolEnv('USE_MOCK_DATA', defaultValue: false);
     _useMockAuth = getBoolEnv('USE_MOCK_AUTH', defaultValue: true);
-    _backendUrl = getEnv('BACKEND_URL', defaultValue: 'http://localhost:3000');
+    // Always use external API (karmgyan-api.onrender.com) - localhost is ignored
+    // This ensures local testing also uses the deployed API
+    _backendUrl = getEnv('BACKEND_URL', defaultValue: 'https://karmgyan-api.onrender.com');
+    
+    // Force external API if somehow localhost got through
+    if (_backendUrl.contains('localhost') || _backendUrl.contains('127.0.0.1')) {
+      debugPrint('⚠️  BACKEND_URL was set to localhost, forcing external API instead');
+      _backendUrl = 'https://karmgyan-api.onrender.com';
+    }
     _supabaseUrl = getEnv('SUPABASE_URL');
     // Support both new and legacy key systems
     _supabasePublishableKey = getEnv('SUPABASE_PUBLISHABLE_KEY');
@@ -161,6 +205,10 @@ class EnvConfig {
     _clerkPublishableKey = getEnv('CLERK_PUBLISHABLE_KEY');
     _clerkSecretKey = getEnv('CLERK_SECRET_KEY');
     _perplexityApiKey = getEnv('PERPLEXITY_API_KEY');
+    // API key for karmgyan-api.onrender.com
+    // Default to demo professional key for testing (10,000 requests/day)
+    // Override with API_KEY env var for production
+    _apiKey = getEnv('API_KEY', defaultValue: 'demo_pro_key_123456789');
 
     // Try to load from package info or other sources
     try {
@@ -176,6 +224,12 @@ class EnvConfig {
     debugPrint('  - useMockData: $_useMockData');
     debugPrint('  - useMockAuth: $_useMockAuth');
     debugPrint('  - backendUrl: $_backendUrl');
+    if (_apiKey.isNotEmpty) {
+      final keyType = _apiKey.startsWith('demo') ? 'DEMO' : _apiKey.startsWith('sk_') ? 'PRODUCTION' : 'CUSTOM';
+      debugPrint('  - apiKey: ${_apiKey.substring(0, _apiKey.length > 20 ? 20 : _apiKey.length)}... ($keyType)');
+    } else {
+      debugPrint('  - apiKey: NOT SET');
+    }
     
     // Warn about missing production keys
     _validateProductionKeys();
@@ -247,6 +301,7 @@ class EnvConfig {
   static String get clerkPublishableKey => _clerkPublishableKey;
   static String get clerkSecretKey => _clerkSecretKey;
   static String get perplexityApiKey => _perplexityApiKey;
+  static String get apiKey => _apiKey;
 
   // Check if production APIs are configured
   // Support both new (publishable) and legacy (anon) key systems
@@ -259,6 +314,7 @@ class EnvConfig {
   static bool get hasCashfreeConfig => _cashfreeAppId.isNotEmpty && _cashfreeSecretKey.isNotEmpty;
   static bool get hasClerkConfig => _clerkPublishableKey.isNotEmpty && _clerkSecretKey.isNotEmpty;
   static bool get hasPerplexityConfig => _perplexityApiKey.isNotEmpty;
+  static bool get hasApiKey => _apiKey.isNotEmpty;
 
   // Force override at runtime (useful for testing/debugging)
   // This takes effect immediately without recompile

@@ -48,5 +48,9 @@ class AppConfig {
   // Perplexity configuration
   static String get perplexityApiKey => EnvConfig.perplexityApiKey;
   static bool get hasPerplexityConfig => EnvConfig.hasPerplexityConfig;
+  
+  // API Key for karmgyan-api.onrender.com
+  static String get apiKey => EnvConfig.apiKey;
+  static bool get hasApiKey => EnvConfig.apiKey.isNotEmpty;
 }
 

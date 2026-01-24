@@ -16,6 +16,7 @@ class ComputationService {
       receiveTimeout: const Duration(seconds: 30),
       headers: {
         'Content-Type': 'application/json',
+        if (AppConfig.hasApiKey) 'X-API-Key': AppConfig.apiKey,
       },
     ),
   );
@@ -104,9 +105,8 @@ class ComputationService {
 
       AppLogger.logRequest(
         method: 'POST',
-        url: '${AppConfig.backendUrl}/api/computation/birth-chart',
+        url: '${AppConfig.backendUrl}/birth-chart',
         body: {
-          'name': name,
           'date': dateStr,
           'time': timeStr,
           'latitude': latitude,
@@ -116,10 +116,10 @@ class ComputationService {
       );
 
       final stopwatch = Stopwatch()..start();
+      // Use new API endpoint structure: /birth-chart (not /api/computation/birth-chart)
       final response = await _dio.post(
-        '/api/computation/birth-chart',
+        '/birth-chart',
         data: {
-          'name': name,
           'date': dateStr,
           'time': timeStr,
           'latitude': latitude,
@@ -131,18 +131,29 @@ class ComputationService {
 
       AppLogger.logResponse(
         method: 'POST',
-        url: '${AppConfig.backendUrl}/api/computation/birth-chart',
+        url: '${AppConfig.backendUrl}/birth-chart',
         statusCode: response.statusCode ?? 0,
         body: response.data,
         duration: stopwatch.elapsed,
       );
 
-      if (response.statusCode == 200 && response.data['success'] == true) {
-        AppLogger.i('✅ [ComputationService] Chart generated successfully', null, null, {
-          'hasPlanets': response.data.containsKey('planets'),
-          if (response.data.containsKey('planets')) 'planets': response.data['planets'].keys.toList(),
-        });
-        return response.data;
+      // New API response format - check for success or planets data
+      if (response.statusCode == 200) {
+        // API may return success: true or directly return chart data
+        if (response.data['success'] == true || response.data.containsKey('planets')) {
+          AppLogger.i('✅ [ComputationService] Chart generated successfully', null, null, {
+            'hasPlanets': response.data.containsKey('planets'),
+            if (response.data.containsKey('planets')) 'planets': response.data['planets'].keys.toList(),
+          });
+          return response.data;
+        } else {
+          // If no success field and no planets, treat as error
+          final errorMsg = response.data['error'] ?? 'Invalid response format';
+          AppLogger.e('❌ [ComputationService] Backend returned invalid response', null, null, {
+            'response': response.data,
+          });
+          throw Exception(errorMsg);
+        }
       } else {
         final errorMsg = response.data['error'] ?? 'Failed to generate birth chart';
         AppLogger.e('❌ [ComputationService] Backend returned error: $errorMsg', null, null, {
@@ -154,7 +165,7 @@ class ComputationService {
       // Enhanced error logging for network errors
       AppLogger.logApiError(
         method: 'POST',
-        url: '${AppConfig.backendUrl}/api/computation/birth-chart',
+        url: '${AppConfig.backendUrl}/birth-chart',
         error: e,
         stackTrace: stackTrace,
         statusCode: e.response?.statusCode,
@@ -307,14 +318,18 @@ class ComputationService {
       final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
       final timeStr = '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}:00';
 
+      // Use new API endpoint: /dasha
       final response = await _dio.post(
-        '/api/computation/dasha',
+        '/dasha',
         data: {
-          'date': dateStr,
-          'time': timeStr,
-          'latitude': latitude,
-          'longitude': longitude,
-          'timezone': timezone,
+          'birth_data': {
+            'date': dateStr,
+            'time': timeStr,
+            'latitude': latitude,
+            'longitude': longitude,
+            'timezone': timezone,
+          },
+          'include_antardasha': true,
         },
       );
 
@@ -345,15 +360,18 @@ class ComputationService {
       final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
       final timeStr = '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}:00';
 
+      // Use new API endpoint: /divisional
       final response = await _dio.post(
-        '/api/computation/divisional',
+        '/divisional',
         data: {
-          'date': dateStr,
-          'time': timeStr,
-          'latitude': latitude,
-          'longitude': longitude,
-          'chartType': chartType,
-          'timezone': timezone,
+          'birth_data': {
+            'date': dateStr,
+            'time': timeStr,
+            'latitude': latitude,
+            'longitude': longitude,
+            'timezone': timezone,
+          },
+          'chart_type': chartType,
         },
       );
 

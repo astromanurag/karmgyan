@@ -3,15 +3,16 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'dart:async';
 import 'app_logger.dart';
 
+// Error categories for better logging
+enum ErrorCategory {
+  network,
+  authentication,
+  validation,
+  server,
+  unknown,
+}
+
 class ErrorHandler {
-  // Error categories for better logging
-  enum ErrorCategory {
-    network,
-    authentication,
-    validation,
-    server,
-    unknown,
-  }
 
   // Get error category
   static ErrorCategory _getErrorCategory(dynamic error) {
@@ -99,7 +100,7 @@ class ErrorHandler {
   static void showError(BuildContext context, dynamic error, {
     Duration? duration,
     StackTrace? stackTrace,
-    Map<String, dynamic>? context,
+    Map<String, dynamic>? errorContext,
   }) {
     if (!context.mounted) return;
 
@@ -114,7 +115,7 @@ class ErrorHandler {
       {
         'category': category.name,
         'userMessage': userMessage,
-        if (context != null) ...context,
+        if (errorContext != null) ...errorContext,
       },
     );
 
@@ -178,9 +179,10 @@ class ErrorHandler {
   // Check internet connectivity
   static Future<bool> checkConnectivity() async {
     try {
-      final connectivityResult = await Connectivity().checkConnectivity();
-      final hasConnection = connectivityResult != ConnectivityResult.none;
-      AppLogger.d('🌐 Connectivity check: ${connectivityResult.name} → $hasConnection');
+      final connectivityResults = await Connectivity().checkConnectivity();
+      final hasConnection = !connectivityResults.contains(ConnectivityResult.none);
+      final resultString = connectivityResults.map((r) => r.toString().split('.').last).join(', ');
+      AppLogger.d('🌐 Connectivity check: $resultString → $hasConnection');
       return hasConnection;
     } catch (e) {
       AppLogger.w('⚠️ Connectivity check failed', e);

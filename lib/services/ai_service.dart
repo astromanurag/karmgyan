@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../config/env_config.dart';
+import '../config/app_config.dart';
 import '../core/utils/app_logger.dart';
 
 /// Service for AI-powered astrological predictions
@@ -16,6 +17,7 @@ class AIService {
       receiveTimeout: const Duration(seconds: 120), // AI responses take time
       headers: {
         'Content-Type': 'application/json',
+        if (AppConfig.hasApiKey) 'X-API-Key': AppConfig.apiKey,
       },
     ),
   );

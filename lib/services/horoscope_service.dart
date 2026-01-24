@@ -65,16 +65,21 @@ class HoroscopeService {
 
     // Fetch from backend API
     try {
+      // Use new API endpoint: /api/horoscope/daily/:sign
       final url = Uri.parse('${EnvConfig.backendUrl}/api/horoscope/daily/$zodiacSign?date=$dateStr');
-      final response = await http.get(url);
+      final headers = <String, String>{
+        if (AppConfig.hasApiKey) 'X-API-Key': AppConfig.apiKey,
+      };
+      final response = await http.get(url, headers: headers);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
-        if (data['success'] == true) {
+        // New API returns content directly, not content_json
+        if (data.containsKey('content')) {
           final result = {
             'date': data['date'] as String,
             'zodiac_sign': data['zodiac_sign'] as String,
-            'content': data['content_json'] as Map<String, dynamic>,
+            'content': data['content'] as Map<String, dynamic>,
           };
           
           // Cache it

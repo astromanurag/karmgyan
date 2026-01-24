@@ -18,6 +18,7 @@ class PanchangService {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
         'Expires': '0',
+        if (AppConfig.hasApiKey) 'X-API-Key': AppConfig.apiKey,
       },
     ),
   );
@@ -211,20 +212,20 @@ class PanchangService {
 
       AppLogger.i('🌐 [PanchangService] Attempting to fetch from backend: ${EnvConfig.backendUrl}/api/panchang/daily');
 
-      final response = await _dio.get(
-        '/api/panchang/daily',
-        queryParameters: {
+      // Use new API endpoint: POST /panchang (not GET /api/panchang/daily)
+      final response = await _dio.post(
+        '/panchang',
+        data: {
           'date': dateStr,
-          if (latitude != null) 'latitude': latitude,
-          if (longitude != null) 'longitude': longitude,
+          if (latitude != null) 'latitude': latitude ?? 28.6139,
+          if (longitude != null) 'longitude': longitude ?? 77.2090,
           'timezone': timezone,
-          '_t': DateTime.now().millisecondsSinceEpoch, // Cache buster
         },
       );
 
       AppLogger.logResponse(
-        method: 'GET',
-        url: '${EnvConfig.backendUrl}/api/panchang/daily',
+        method: 'POST',
+        url: '${EnvConfig.backendUrl}/panchang',
         statusCode: response.statusCode ?? 0,
         body: response.data,
       );
@@ -242,8 +243,8 @@ class PanchangService {
     } on DioException catch (e, stackTrace) {
       // Fallback to mock data on network error
       AppLogger.logApiError(
-        method: 'GET',
-        url: '${EnvConfig.backendUrl}/api/panchang/daily',
+        method: 'POST',
+        url: '${EnvConfig.backendUrl}/panchang',
         error: e,
         stackTrace: stackTrace,
         statusCode: e.response?.statusCode,

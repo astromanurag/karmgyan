@@ -45,11 +45,12 @@ class NumerologyService {
       );
 
       final stopwatch = Stopwatch()..start();
+      // Use new API endpoint: /numerology
       final response = await _dio.post(
-        '/api/numerology/analyze',
+        '/numerology',
         data: {
           'name': name,
-          if (birthDate != null) 'birthDate': birthDate,
+          if (birthDate != null) 'birth_date': birthDate,
           'system': system,
         },
       );
@@ -57,7 +58,7 @@ class NumerologyService {
 
       AppLogger.logResponse(
         method: 'POST',
-        url: '${AppConfig.backendUrl}/api/numerology/analyze',
+        url: '${AppConfig.backendUrl}/numerology',
         statusCode: response.statusCode ?? 0,
         body: response.data,
         duration: stopwatch.elapsed,
@@ -76,7 +77,7 @@ class NumerologyService {
     } on DioException catch (e, stackTrace) {
       AppLogger.logApiError(
         method: 'POST',
-        url: '${AppConfig.backendUrl}/api/numerology/analyze',
+        url: '${AppConfig.backendUrl}/numerology',
         error: e,
         stackTrace: stackTrace,
         statusCode: e.response?.statusCode,

@@ -323,17 +323,30 @@ class _BirthChartScreenState extends ConsumerState<BirthChartScreen> {
   }
 
   Future<void> _generatePdfReport() async {
-    if (_chartData == null) return;
+    if (_chartData == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please generate a birth chart first'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+      return;
+    }
 
     try {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Generating PDF report...')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Generating PDF report...')),
+        );
+      }
 
+      // Generate PDF
       final pdfData = await PdfReportService().generateBirthChartReport(
         name: _nameController.text.isNotEmpty ? _nameController.text : 'User',
         birthDate: _selectedDate ?? DateTime.now(),
-        birthTime: _timeController.text,
+        birthTime: _timeController.text.isNotEmpty ? _timeController.text : '12:00:00',
         birthPlace: _locationController.text.isNotEmpty ? _locationController.text : 'Unknown',
         latitude: double.tryParse(_latitudeController.text) ?? 0,
         longitude: double.tryParse(_longitudeController.text) ?? 0,
@@ -341,7 +354,9 @@ class _BirthChartScreenState extends ConsumerState<BirthChartScreen> {
         dashaData: _dashaData,
       );
 
-      final fileName = 'kundli_${_nameController.text.replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}.pdf';
+      final fileName = 'kundli_${_nameController.text.replaceAll(' ', '_').isEmpty ? 'user' : _nameController.text.replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}.pdf';
+      
+      // Share/Download PDF
       await PdfReportService().sharePdf(pdfData, fileName);
       
       if (mounted) {

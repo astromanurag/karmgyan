@@ -318,23 +318,40 @@ class ComputationService {
       final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
       final timeStr = '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}:00';
 
-      // Use new API endpoint: /dasha
+      // Use API endpoint: /dasha/mahadasha (returns all mahadashas with current)
+      // This endpoint accepts BirthDataRequest directly (not nested in birth_data)
       final response = await _dio.post(
-        '/dasha',
+        '/dasha/mahadasha',
         data: {
-          'birth_data': {
-            'date': dateStr,
-            'time': timeStr,
-            'latitude': latitude,
-            'longitude': longitude,
-            'timezone': timezone,
-          },
-          'include_antardasha': true,
+          'date': dateStr,
+          'time': timeStr,
+          'latitude': latitude,
+          'longitude': longitude,
+          'timezone': timezone,
+          'ayanamsha': 'lahiri',  // Default ayanamsha
         },
       );
 
       if (response.statusCode == 200) {
-        return response.data;
+        final data = response.data;
+        // Transform the response to match expected format
+        // The API returns: { success: true, mahadashas: [...], current_mahadasha: {...}, ... }
+        // We need: { mahadashas: [...], current: { mahadasha: {...} }, ... }
+        return {
+          'moon_nakshatra': data['moon_nakshatra'] ?? '',
+          'nakshatra_lord': data['nakshatra_lord'] ?? '',
+          'nakshatra_pada': data['nakshatra_pada'] ?? 0,
+          'moon_longitude': data['moon_longitude'] ?? 0.0,
+          'mahadashas': (data['mahadashas'] as List<dynamic>?)?.map((md) => {
+            'lord': md['lord'] ?? '',
+            'start_date': md['start_date'] ?? '',
+            'end_date': md['end_date'] ?? '',
+            'years': md['years'] ?? 0,
+          }).toList() ?? [],
+          'current': {
+            'mahadasha': data['current_mahadasha'] ?? null,
+          },
+        };
       } else {
         throw Exception(response.data['error'] ?? 'Failed to generate dasha');
       }

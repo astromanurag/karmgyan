@@ -1,8 +1,10 @@
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../services/panchang_service.dart';
+import 'dart:html' as html if (dart.library.html);
 
 /// Service to generate comprehensive PDF reports
 class PdfReportService {
@@ -242,7 +244,28 @@ class PdfReportService {
 
   /// Share/Print the PDF
   Future<void> sharePdf(Uint8List pdfData, String fileName) async {
-    await Printing.sharePdf(bytes: pdfData, filename: fileName);
+    try {
+      // On web, use download instead of share
+      if (kIsWeb) {
+        // Create a blob URL and trigger download
+        final blob = html.Blob([pdfData]);
+        final url = html.Url.createObjectUrlFromBlob(blob);
+        final anchor = html.AnchorElement(href: url)
+          ..setAttribute('download', fileName)
+          ..click();
+        html.Url.revokeObjectUrl(url);
+      } else {
+        // On mobile, use the printing package
+        await Printing.sharePdf(bytes: pdfData, filename: fileName);
+      }
+    } catch (e) {
+      // Fallback: try layoutPdf
+      try {
+        await Printing.layoutPdf(onLayout: (format) => pdfData);
+      } catch (e2) {
+        throw Exception('Failed to share PDF: $e2');
+      }
+    }
   }
 
   /// Print the PDF directly

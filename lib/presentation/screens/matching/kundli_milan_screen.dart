@@ -58,18 +58,27 @@ class _KundliMilanScreenState extends ConsumerState<KundliMilanScreen> {
     });
 
     try {
+      // Format date as YYYY-MM-DD (API expects this format)
+      final p1DateStr = '${_p1Date!.year}-${_p1Date!.month.toString().padLeft(2, '0')}-${_p1Date!.day.toString().padLeft(2, '0')}';
+      final p2DateStr = '${_p2Date!.year}-${_p2Date!.month.toString().padLeft(2, '0')}-${_p2Date!.day.toString().padLeft(2, '0')}';
+      // Format time as HH:MM:SS (API expects this format)
+      final p1TimeStr = '${_p1Time!.hour.toString().padLeft(2, '0')}:${_p1Time!.minute.toString().padLeft(2, '0')}:00';
+      final p2TimeStr = '${_p2Time!.hour.toString().padLeft(2, '0')}:${_p2Time!.minute.toString().padLeft(2, '0')}:00';
+      
       final person1 = {
-        'date': _p1Date!.toIso8601String(),
-        'time': '${_p1Time!.hour}:${_p1Time!.minute}',
+        'date': p1DateStr,
+        'time': p1TimeStr,
         'latitude': double.parse(_p1LatController.text),
         'longitude': double.parse(_p1LonController.text),
+        'timezone': 'Asia/Kolkata',
       };
 
       final person2 = {
-        'date': _p2Date!.toIso8601String(),
-        'time': '${_p2Time!.hour}:${_p2Time!.minute}',
+        'date': p2DateStr,
+        'time': p2TimeStr,
         'latitude': double.parse(_p2LatController.text),
         'longitude': double.parse(_p2LonController.text),
+        'timezone': 'Asia/Kolkata',
       };
 
       final result = await MatchingService().computeCompatibility(
@@ -284,9 +293,18 @@ class _CompatibilityResultView extends StatelessWidget {
   Widget build(BuildContext context) {
     final gunaMilan = result['guna_milan'] as Map<String, dynamic>? ?? {};
     final doshas = result['doshas'] as Map<String, dynamic>? ?? {};
-    final totalPoints = gunaMilan['total_points'] ?? 0;
-    final maxPoints = gunaMilan['out_of'] ?? 36;
-    final percentage = ((totalPoints / maxPoints) * 100).toStringAsFixed(1);
+    // Handle both int and double for total_points
+    final totalPointsValue = gunaMilan['total_points'];
+    final totalPoints = (totalPointsValue is num) ? totalPointsValue.toDouble() : 
+                        (totalPointsValue != null ? double.tryParse(totalPointsValue.toString()) ?? 0.0 : 0.0);
+    final maxPointsValue = gunaMilan['out_of'];
+    final maxPoints = (maxPointsValue is num) ? maxPointsValue.toDouble() : 
+                      (maxPointsValue != null ? double.tryParse(maxPointsValue.toString()) ?? 36.0 : 36.0);
+    // Use API percentage if available, otherwise calculate
+    final percentageValue = gunaMilan['percentage'];
+    final percentage = (percentageValue != null) ? 
+                       (percentageValue is num ? percentageValue.toStringAsFixed(1) : percentageValue.toString()) :
+                       ((totalPoints / maxPoints) * 100).toStringAsFixed(1);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -309,7 +327,7 @@ class _CompatibilityResultView extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    '$totalPoints / $maxPoints',
+                    '${totalPoints.toStringAsFixed(totalPoints % 1 == 0 ? 0 : 1)} / ${maxPoints.toStringAsFixed(0)}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 48,
@@ -335,10 +353,17 @@ class _CompatibilityResultView extends StatelessWidget {
                 ),
           ),
           const SizedBox(height: 16),
-          if (gunaMilan['details'] != null)
-            ...(gunaMilan['details'] as List).map((guna) {
-              return _GunaCard(guna: guna);
-            }).toList(),
+          if (gunaMilan['details'] != null) {
+            final detailsList = gunaMilan['details'];
+            if (detailsList is List) {
+              ...detailsList.map((guna) {
+                if (guna is Map<String, dynamic>) {
+                  return _GunaCard(guna: guna);
+                }
+                return const SizedBox.shrink();
+              }).toList(),
+            }
+          }
           const SizedBox(height: 24),
           Text(
             'Dosha Analysis',
@@ -384,8 +409,13 @@ class _GunaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final points = guna['points'] ?? 0;
-    final maxPoints = guna['max_points'] ?? 0;
+    // Handle both int and double for points
+    final pointsValue = guna['points'];
+    final points = (pointsValue is num) ? pointsValue.toDouble() : 
+                   (pointsValue != null ? double.tryParse(pointsValue.toString()) ?? 0.0 : 0.0);
+    final maxPointsValue = guna['max_points'];
+    final maxPoints = (maxPointsValue is num) ? maxPointsValue.toDouble() : 
+                      (maxPointsValue != null ? double.tryParse(maxPointsValue.toString()) ?? 0.0 : 0.0);
     final percentage = maxPoints > 0 ? (points / maxPoints * 100) : 0;
 
     return Card(
@@ -401,7 +431,7 @@ class _GunaCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              '$points / $maxPoints',
+              '${points.toStringAsFixed(points % 1 == 0 ? 0 : 1)} / ${maxPoints.toStringAsFixed(0)}',
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,

@@ -353,17 +353,13 @@ class _CompatibilityResultView extends StatelessWidget {
                 ),
           ),
           const SizedBox(height: 16),
-          if (gunaMilan['details'] != null) {
-            final detailsList = gunaMilan['details'];
-            if (detailsList is List) {
-              ...detailsList.map((guna) {
-                if (guna is Map<String, dynamic>) {
-                  return _GunaCard(guna: guna);
-                }
-                return const SizedBox.shrink();
-              }).toList(),
-            }
-          }
+          if (gunaMilan['details'] != null)
+            ...((gunaMilan['details'] as List?) ?? []).map((guna) {
+              if (guna is Map<String, dynamic>) {
+                return _GunaCard(guna: guna);
+              }
+              return const SizedBox.shrink();
+            }).toList(),
           const SizedBox(height: 24),
           Text(
             'Dosha Analysis',

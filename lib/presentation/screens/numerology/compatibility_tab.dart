@@ -4,7 +4,9 @@ import '../../../config/app_theme.dart';
 import '../../../services/numerology_service.dart';
 
 class CompatibilityTab extends ConsumerStatefulWidget {
-  const CompatibilityTab({super.key});
+  final Map<String, dynamic>? sampleData;
+  
+  const CompatibilityTab({super.key, this.sampleData});
 
   @override
   ConsumerState<CompatibilityTab> createState() => _CompatibilityTabState();
@@ -16,6 +18,17 @@ class _CompatibilityTabState extends ConsumerState<CompatibilityTab> {
   String _selectedSystem = 'pythagorean';
   bool _isLoading = false;
   Map<String, dynamic>? _result;
+
+  @override
+  void initState() {
+    super.initState();
+    // Use sample data if provided
+    if (widget.sampleData != null) {
+      _number1 = widget.sampleData!['number1'] ?? 1;
+      _number2 = widget.sampleData!['number2'] ?? 1;
+      _selectedSystem = widget.sampleData!['system'] ?? 'pythagorean';
+    }
+  }
 
   Future<void> _checkCompatibility() async {
     setState(() {

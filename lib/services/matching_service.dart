@@ -42,24 +42,40 @@ class MatchingService {
 
       final stopwatch = Stopwatch()..start();
       // Use new API endpoint: /compatibility
+      // Ensure time format is HH:MM:SS (backend expects this format)
+      String formatTime(String timeStr) {
+        if (timeStr.contains(':')) {
+          final parts = timeStr.split(':');
+          if (parts.length == 2) {
+            // Add seconds if missing
+            return '${parts[0]}:${parts[1]}:00';
+          }
+        }
+        return timeStr;
+      }
+      
+      final requestData = {
+        'person1': {
+          'date': person1['date'],
+          'time': formatTime(person1['time'] ?? '12:00:00'),
+          'latitude': (person1['latitude'] as num).toDouble(),
+          'longitude': (person1['longitude'] as num).toDouble(),
+          'timezone': person1['timezone'] ?? 'Asia/Kolkata',
+        },
+        'person2': {
+          'date': person2['date'],
+          'time': formatTime(person2['time'] ?? '12:00:00'),
+          'latitude': (person2['latitude'] as num).toDouble(),
+          'longitude': (person2['longitude'] as num).toDouble(),
+          'timezone': person2['timezone'] ?? 'Asia/Kolkata',
+        },
+      };
+      
+      AppLogger.d('📤 [MatchingService] Request data: $requestData');
+      
       final response = await _dio.post(
         '/compatibility',
-        data: {
-          'person1': {
-            'date': person1['date'],
-            'time': person1['time'],
-            'latitude': person1['latitude'],
-            'longitude': person1['longitude'],
-            'timezone': person1['timezone'] ?? 'Asia/Kolkata',
-          },
-          'person2': {
-            'date': person2['date'],
-            'time': person2['time'],
-            'latitude': person2['latitude'],
-            'longitude': person2['longitude'],
-            'timezone': person2['timezone'] ?? 'Asia/Kolkata',
-          },
-        },
+        data: requestData,
       );
       stopwatch.stop();
 
@@ -78,7 +94,7 @@ class MatchingService {
         });
         return response.data;
       } else {
-        final error = response.data['error'] ?? 'Failed to compute compatibility';
+        final error = response.data['error'] ?? response.data['detail'] ?? 'Failed to compute compatibility';
         AppLogger.e('❌ [MatchingService] Compatibility computation failed', null, null, {'error': error});
         throw Exception(error);
       }

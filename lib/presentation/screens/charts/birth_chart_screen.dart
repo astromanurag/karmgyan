@@ -9,7 +9,9 @@ import '../../../services/location_service.dart';
 import '../../widgets/diamond_chart_widget.dart';
 
 class BirthChartScreen extends ConsumerStatefulWidget {
-  const BirthChartScreen({super.key});
+  final Map<String, dynamic>? sampleData;
+  
+  const BirthChartScreen({super.key, this.sampleData});
 
   @override
   ConsumerState<BirthChartScreen> createState() => _BirthChartScreenState();
@@ -40,17 +42,28 @@ class _BirthChartScreenState extends ConsumerState<BirthChartScreen> {
   void initState() {
     super.initState();
     
-    // TODO: REMOVE THIS - Default values for testing only
-    // Setting default birth data: 31/10/1987, 6:35 AM, Amroha (28.9052, 78.4673)
-    _nameController.text = 'Test User';
-    _selectedDate = DateTime(1987, 10, 31);
-    _dateController.text = '31/10/1987';
-    _selectedTime = const TimeOfDay(hour: 6, minute: 35);
-    _timeController.text = '06:35';
-    _latitudeController.text = '28.9052';
-    _longitudeController.text = '78.4673';
-    _locationController.text = 'Amroha';
-    // END TODO
+    // Use sample data if provided, otherwise use default test values
+    if (widget.sampleData != null) {
+      final data = widget.sampleData!;
+      _nameController.text = data['name'] ?? 'Test User';
+      _selectedDate = data['date'] as DateTime? ?? DateTime(1987, 10, 31);
+      _dateController.text = '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}';
+      _selectedTime = data['time'] as TimeOfDay? ?? const TimeOfDay(hour: 6, minute: 35);
+      _timeController.text = '${_selectedTime!.hour.toString().padLeft(2, '0')}:${_selectedTime!.minute.toString().padLeft(2, '0')}';
+      _latitudeController.text = (data['latitude'] as num?)?.toString() ?? '28.6139';
+      _longitudeController.text = (data['longitude'] as num?)?.toString() ?? '77.2090';
+      _locationController.text = data['location'] ?? 'New Delhi, India';
+    } else {
+      // Default values for testing only
+      _nameController.text = 'Test User';
+      _selectedDate = DateTime(1987, 10, 31);
+      _dateController.text = '31/10/1987';
+      _selectedTime = const TimeOfDay(hour: 6, minute: 35);
+      _timeController.text = '06:35';
+      _latitudeController.text = '28.9052';
+      _longitudeController.text = '78.4673';
+      _locationController.text = 'Amroha';
+    }
     
     // Load stored dasha data if available
     _loadStoredDashaData();

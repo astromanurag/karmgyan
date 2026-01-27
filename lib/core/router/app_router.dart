@@ -147,14 +147,29 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/birth-chart',
-            builder: (context, state) => const BirthChartScreen(),
+            builder: (context, state) {
+              final sampleData = state.extra as Map<String, dynamic>?;
+              return BirthChartScreen(sampleData: sampleData);
+            },
           ),
         ],
       ),
       GoRoute(
         path: '/birth-chart',
-        builder: (context, state) => const BirthChartScreen(),
+        builder: (context, state) {
+          final sampleData = state.extra as Map<String, dynamic>?;
+          return BirthChartScreen(sampleData: sampleData);
+        },
       ),
+      // Test menu route - only available in development
+      // Uncomment the import and route below for local testing:
+      // 
+      // import '../../../testing/screens/test_menu_screen.dart' as test;
+      // 
+      // GoRoute(
+      //   path: '/testing/menu',
+      //   builder: (context, state) => const test.TestMenuScreen(),
+      // ),
       GoRoute(
         path: '/chart-demo',
         builder: (context, state) => const ChartDemoScreen(),
@@ -176,7 +191,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/numerology',
-        builder: (context, state) => const NumerologyScreen(),
+        builder: (context, state) {
+          final sampleData = state.extra as Map<String, dynamic>?;
+          return NumerologyScreen(sampleData: sampleData);
+        },
       ),
       // AI Predictions routes
       GoRoute(
@@ -217,7 +235,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/matching',
-        builder: (context, state) => const MatchingScreen(),
+        builder: (context, state) {
+          final sampleData = state.extra as Map<String, dynamic>?;
+          return MatchingScreen(sampleData: sampleData);
+        },
       ),
       // Admin routes
       GoRoute(
@@ -268,7 +289,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Kundli Milan route
       GoRoute(
         path: '/kundli-milan',
-        builder: (context, state) => const KundliMilanScreen(),
+        builder: (context, state) {
+          final sampleData = state.extra as Map<String, dynamic>?;
+          return KundliMilanScreen(sampleData: sampleData);
+        },
       ),
       // Panchang routes
       GoRoute(

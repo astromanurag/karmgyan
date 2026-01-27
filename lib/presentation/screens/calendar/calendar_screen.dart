@@ -6,7 +6,9 @@ import '../../../config/app_theme.dart';
 import '../../../services/panchang_service.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
-  const CalendarScreen({super.key});
+  final Map<String, dynamic>? sampleData;
+  
+  const CalendarScreen({super.key, this.sampleData});
 
   @override
   ConsumerState<CalendarScreen> createState() => _CalendarScreenState();
@@ -22,6 +24,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   @override
   void initState() {
     super.initState();
+    // Use sample data date if provided
+    if (widget.sampleData != null && widget.sampleData!['date'] != null) {
+      _selectedDay = widget.sampleData!['date'] as DateTime;
+      _focusedDay = _selectedDay;
+    }
     _loadPanchang(forDay: _selectedDay);
   }
 

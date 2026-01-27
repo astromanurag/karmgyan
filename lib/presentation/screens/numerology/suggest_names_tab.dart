@@ -4,7 +4,9 @@ import '../../../config/app_theme.dart';
 import '../../../services/numerology_service.dart';
 
 class SuggestNamesTab extends ConsumerStatefulWidget {
-  const SuggestNamesTab({super.key});
+  final Map<String, dynamic>? sampleData;
+  
+  const SuggestNamesTab({super.key, this.sampleData});
 
   @override
   ConsumerState<SuggestNamesTab> createState() => _SuggestNamesTabState();
@@ -22,6 +24,17 @@ class _SuggestNamesTabState extends ConsumerState<SuggestNamesTab> {
   String? _selectedReligion;
   String? _selectedGender; // 'male', 'female', or null for both
   Set<String> _displayedNames = {}; // Track displayed names for duplicate prevention
+
+  @override
+  void initState() {
+    super.initState();
+    // Use sample data if provided
+    if (widget.sampleData != null) {
+      _nameController.text = widget.sampleData!['name'] ?? '';
+      _targetNumber = widget.sampleData!['targetNumber'] ?? 8;
+      _selectedSystem = widget.sampleData!['system'] ?? 'pythagorean';
+    }
+  }
 
   @override
   void dispose() {

@@ -4,7 +4,9 @@ import '../../../config/app_theme.dart';
 import '../../../services/matching_service.dart';
 
 class MatchingScreen extends ConsumerStatefulWidget {
-  const MatchingScreen({super.key});
+  final Map<String, dynamic>? sampleData;
+  
+  const MatchingScreen({super.key, this.sampleData});
 
   @override
   ConsumerState<MatchingScreen> createState() => _MatchingScreenState();
@@ -27,6 +29,43 @@ class _MatchingScreenState extends ConsumerState<MatchingScreen> {
   TimeOfDay? _person2Time;
   bool _isLoading = false;
   Map<String, dynamic>? _compatibilityResult;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // Use sample data if provided
+    if (widget.sampleData != null) {
+      final person1 = widget.sampleData!['person1'] as Map<String, dynamic>?;
+      final person2 = widget.sampleData!['person2'] as Map<String, dynamic>?;
+      
+      if (person1 != null) {
+        _person1Date = person1['date'] as DateTime?;
+        _person1Time = person1['time'] as TimeOfDay?;
+        if (_person1Date != null) {
+          _person1DateController.text = '${_person1Date!.day}/${_person1Date!.month}/${_person1Date!.year}';
+        }
+        if (_person1Time != null) {
+          _person1TimeController.text = '${_person1Time!.hour.toString().padLeft(2, '0')}:${_person1Time!.minute.toString().padLeft(2, '0')}';
+        }
+        _person1LatController.text = (person1['latitude'] as num?)?.toString() ?? '';
+        _person1LonController.text = (person1['longitude'] as num?)?.toString() ?? '';
+      }
+      
+      if (person2 != null) {
+        _person2Date = person2['date'] as DateTime?;
+        _person2Time = person2['time'] as TimeOfDay?;
+        if (_person2Date != null) {
+          _person2DateController.text = '${_person2Date!.day}/${_person2Date!.month}/${_person2Date!.year}';
+        }
+        if (_person2Time != null) {
+          _person2TimeController.text = '${_person2Time!.hour.toString().padLeft(2, '0')}:${_person2Time!.minute.toString().padLeft(2, '0')}';
+        }
+        _person2LatController.text = (person2['latitude'] as num?)?.toString() ?? '';
+        _person2LonController.text = (person2['longitude'] as num?)?.toString() ?? '';
+      }
+    }
+  }
 
   @override
   void dispose() {

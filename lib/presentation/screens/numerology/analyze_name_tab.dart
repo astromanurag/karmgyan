@@ -5,7 +5,9 @@ import '../../../config/app_theme.dart';
 import '../../../services/numerology_service.dart';
 
 class AnalyzeNameTab extends ConsumerStatefulWidget {
-  const AnalyzeNameTab({super.key});
+  final Map<String, dynamic>? sampleData;
+  
+  const AnalyzeNameTab({super.key, this.sampleData});
 
   @override
   ConsumerState<AnalyzeNameTab> createState() => _AnalyzeNameTabState();
@@ -18,6 +20,17 @@ class _AnalyzeNameTabState extends ConsumerState<AnalyzeNameTab> {
   String _selectedSystem = 'pythagorean';
   bool _isLoading = false;
   Map<String, dynamic>? _result;
+
+  @override
+  void initState() {
+    super.initState();
+    // Use sample data if provided
+    if (widget.sampleData != null) {
+      _nameController.text = widget.sampleData!['name'] ?? '';
+      _selectedDate = widget.sampleData!['birthDate'] as DateTime?;
+      _selectedSystem = widget.sampleData!['system'] ?? 'pythagorean';
+    }
+  }
 
   @override
   void dispose() {

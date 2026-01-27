@@ -4,7 +4,9 @@ import '../../../config/app_theme.dart';
 import '../../../services/matching_service.dart';
 
 class KundliMilanScreen extends ConsumerStatefulWidget {
-  const KundliMilanScreen({super.key});
+  final Map<String, dynamic>? sampleData;
+  
+  const KundliMilanScreen({super.key, this.sampleData});
 
   @override
   ConsumerState<KundliMilanScreen> createState() => _KundliMilanScreenState();
@@ -29,6 +31,43 @@ class _KundliMilanScreenState extends ConsumerState<KundliMilanScreen> {
 
   DateTime? _p1Date, _p2Date;
   TimeOfDay? _p1Time, _p2Time;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // Use sample data if provided
+    if (widget.sampleData != null) {
+      final person1 = widget.sampleData!['person1'] as Map<String, dynamic>?;
+      final person2 = widget.sampleData!['person2'] as Map<String, dynamic>?;
+      
+      if (person1 != null) {
+        _p1Date = person1['date'] as DateTime?;
+        _p1Time = person1['time'] as TimeOfDay?;
+        if (_p1Date != null) {
+          _p1DateController.text = '${_p1Date!.day}/${_p1Date!.month}/${_p1Date!.year}';
+        }
+        if (_p1Time != null) {
+          _p1TimeController.text = '${_p1Time!.hour.toString().padLeft(2, '0')}:${_p1Time!.minute.toString().padLeft(2, '0')}';
+        }
+        _p1LatController.text = (person1['latitude'] as num?)?.toString() ?? '';
+        _p1LonController.text = (person1['longitude'] as num?)?.toString() ?? '';
+      }
+      
+      if (person2 != null) {
+        _p2Date = person2['date'] as DateTime?;
+        _p2Time = person2['time'] as TimeOfDay?;
+        if (_p2Date != null) {
+          _p2DateController.text = '${_p2Date!.day}/${_p2Date!.month}/${_p2Date!.year}';
+        }
+        if (_p2Time != null) {
+          _p2TimeController.text = '${_p2Time!.hour.toString().padLeft(2, '0')}:${_p2Time!.minute.toString().padLeft(2, '0')}';
+        }
+        _p2LatController.text = (person2['latitude'] as num?)?.toString() ?? '';
+        _p2LonController.text = (person2['longitude'] as num?)?.toString() ?? '';
+      }
+    }
+  }
 
   @override
   void dispose() {

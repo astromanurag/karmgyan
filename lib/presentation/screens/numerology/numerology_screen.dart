@@ -7,7 +7,9 @@ import 'suggest_names_tab.dart';
 import 'loshu_grid_tab.dart';
 
 class NumerologyScreen extends ConsumerStatefulWidget {
-  const NumerologyScreen({super.key});
+  final Map<String, dynamic>? sampleData;
+  
+  const NumerologyScreen({super.key, this.sampleData});
 
   @override
   ConsumerState<NumerologyScreen> createState() => _NumerologyScreenState();
@@ -21,6 +23,18 @@ class _NumerologyScreenState extends ConsumerState<NumerologyScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    
+    // Set initial tab based on sample data mode
+    if (widget.sampleData != null) {
+      final mode = widget.sampleData!['mode'] as String?;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mode == 'compatibility') {
+          _tabController.index = 1;
+        } else if (mode == 'suggestions') {
+          _tabController.index = 2;
+        }
+      });
+    }
   }
 
   @override
@@ -125,11 +139,11 @@ class _NumerologyScreenState extends ConsumerState<NumerologyScreen>
               Expanded(
                 child: TabBarView(
                   controller: _tabController,
-                  children: const [
-                    AnalyzeNameTab(),
-                    CompatibilityTab(),
-                    SuggestNamesTab(),
-                    LoshuGridTab(),
+                  children: [
+                    AnalyzeNameTab(sampleData: widget.sampleData),
+                    CompatibilityTab(sampleData: widget.sampleData),
+                    SuggestNamesTab(sampleData: widget.sampleData),
+                    const LoshuGridTab(),
                   ],
                 ),
               ),
